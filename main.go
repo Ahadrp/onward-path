@@ -1,9 +1,12 @@
 package main
 
 import (
-	"fmt"
+	"onward-path/internal/mm"
 )
 
 func main() {
-	fmt.Println("Hello, World!")
+	mm.Load()
+	mm.Run()
+
+	select {}
 }
