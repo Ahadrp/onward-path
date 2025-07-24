@@ -1,10 +1,15 @@
 package ipc
 
 import (
+	// "bytes"
+	// "encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net"
+	"net/http"
+	netURL "net/url"
+	"strings"
 )
 
 type IPC struct {
@@ -54,4 +59,37 @@ func (i IPC) tcpListen() {
 			c.Close()
 		}(conn)
 	}
+}
+
+func Post(_url string, formData map[string]string) (string, error) {
+	url := "http://" + _url
+
+	// Prepare form values
+	data := netURL.Values{}
+	for k, v := range formData {
+		data.Set(k, v)
+	}
+
+	resp, err := http.Post(url, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()))
+	if err != nil {
+		log.Printf("Error in sending post request | URL: '%s' | Data: '%s' | Error: '%s'", url, data, err)
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	// Read response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Error in reading post request | URL: '%s' | Data: '%s' | Error: '%s'", url, data, err)
+		return "", err
+	}
+
+	// Check status code
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		log.Printf("Error in reading post request | URL: '%s' | Data: '%s' | Status code: '%d' | Error: '%s'", url, data, resp.StatusCode, err)
+		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	log.Printf("Sending post request was successful! | URL: '%s' | Data: '%s' | Response: '%s'", url, data, string(body))
+	return string(body), nil
 }
