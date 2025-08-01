@@ -1,9 +1,14 @@
 package xui
 
 import (
+    "io"
+    "bytes"
 	"fmt"
+	"github.com/google/uuid"
 	"log"
 	"onward-path/internal/ipc"
+    "encoding/json"
+	"net/http"
 )
 
 var (
@@ -29,4 +34,44 @@ func Login(username string, password string) error {
 	log.Printf("Login of user '%s' was successful! | output: '%s'", username, result)
 
 	return nil
+}
+
+func AddClient(w http.ResponseWriter, r *http.Request) {
+	url := fmt.Sprintf("%s:%d/%s%saddClient/", HOST, PORT, URI_PATH, BASE_ENDPOINT)
+	// find user base on session. assume we've found it.
+    // TODO: check if user exist with this email.
+    if r.Method != http.MethodPost {
+        errTxt := "Method Not Allowed"
+        log.Printf("HTTP %d - %s", http.StatusMethodNotAllowed, errTxt)
+		http.Error(w, errTxt, http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Set response header
+	w.Header().Set("Content-Type", "application/json")
+
+    var addClientRequest AddClientRequest
+    bodyBytes, err := io.ReadAll(r.Body)
+    if err := json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&addClientRequest); err != nil {
+        log.Printf("HTTP %d - %s: %s", http.StatusBadRequest, "Invalid JSON body",
+        string(bodyBytes))
+		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
+		return
+	}
+    defer r.Body.Close()
+
+    addClientRequest.Settings.Clients[0].ID = uuid.New()
+    jsonClient, err := json.Marshal(addClientRequest)
+    if err != nil {
+        log.Printf("Failed to convert client to json: ", err)
+        return
+    }
+
+	result, err := ipc.Post(url, string(jsonClient))
+    if err != nil {
+        log.Printf("Failed to convert client to json: ", err)
+        return
+    }
+	log.Printf("Client '%s' was added successfully! | output: '%s'", addClientRequest.Settings.Clients[0].Email, result)
+
 }

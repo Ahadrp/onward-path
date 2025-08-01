@@ -1,7 +1,7 @@
 package ipc
 
 import (
-	// "bytes"
+	"bytes"
 	// "encoding/json"
 	"fmt"
 	"io"
@@ -13,7 +13,7 @@ import (
 )
 
 var (
-    HTTP_PORT = "2332"
+	HTTP_PORT = "2332"
 )
 
 type IPC struct {
@@ -31,14 +31,14 @@ func (i IPC) Load() error {
 func (i IPC) Run() error {
 	// go i.tcpListen()
 
-    log.Printf("Listening to http (2332 port)")
-    httpErrCh := make(chan error)
-    go i.httpListen(httpErrCh)
-    go func() {
-        if err := <-httpErrCh; err != nil {
-            log.Panicf("Error in listening to http (2332 port): ", err)
-        }
-    }()
+	log.Printf("Listening to http (2332 port)")
+	httpErrCh := make(chan error)
+	go i.httpListen(httpErrCh)
+	go func() {
+		if err := <-httpErrCh; err != nil {
+			log.Panicf("Error in listening to http (2332 port): ", err)
+		}
+	}()
 
 	log.Println("IPC module has been run")
 	return nil
@@ -75,9 +75,9 @@ func (i IPC) tcpListen() {
 }
 
 func (i IPC) httpListen(errCh chan error) {
-    err := http.ListenAndServe(":" + HTTP_PORT, nil)
+	err := http.ListenAndServe(":"+HTTP_PORT, nil)
 	if err != nil {
-        errCh <- err
+		errCh <- err
 	}
 }
 
@@ -113,3 +113,22 @@ func PostLogin(_url string, formData map[string]string) (string, error) {
 	log.Printf("Sending post request was successful! | URL: '%s' | Data: '%s' | Response: '%s'", url, data, string(body))
 	return string(body), nil
 }
+
+func Post(_url string, data string) (string, error) {
+	url := "http://" + _url
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(data)))
+	if err != nil {
+		log.Printf("Error in sending post request | URL: '%s' | Data: '%s' | Status code: '%d' | Error: '%s'", url, data, resp.StatusCode, err)
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Error in reading post request | URL: '%s' | Data: '%s' | Status code: '%d' | Error: '%s'", url, data, resp.StatusCode, err)
+		return "", err
+	}
+
+	return string(body), nil
+}
+

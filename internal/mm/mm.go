@@ -3,6 +3,7 @@ package mm
 import (
 	"fmt"
 	"log"
+	"onward-path/api"
 	"onward-path/internal/ipc"
 	"onward-path/internal/xui"
 )
@@ -10,6 +11,7 @@ import (
 var (
 	IPC *ipc.IPC
 	XUI *xui.XUI
+	API *api.API
 )
 
 func Load() error {
@@ -21,6 +23,11 @@ func Load() error {
 	XUI = xui.New()
 	if err := XUI.Load(); err != nil {
 		log.Panic("XUI has not been initilized")
+	}
+
+	API = api.New()
+	if err := API.Load(); err != nil {
+		log.Panic("API has not been initilized")
 	}
 
 	fmt.Println("All modules have been loaded")
@@ -40,6 +47,13 @@ func Run() error {
 	}
 	if err := XUI.Run(); err != nil {
 		log.Panic("Error while running XUI: ", err)
+	}
+
+	if API == nil {
+		log.Panic("API has not been initilized")
+	}
+	if err := API.Run(); err != nil {
+		log.Panic("Error while running API: ", err)
 	}
 
 	fmt.Println("All modules have been run")

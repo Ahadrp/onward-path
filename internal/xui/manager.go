@@ -1,10 +1,8 @@
 package xui
 
 import (
-	// "bytes"
-	// "encoding/json"
+	"fmt"
 	"log"
-    "fmt"
 	"net/http"
 )
 
@@ -16,7 +14,7 @@ func New() *XUI {
 }
 
 func (i XUI) Load() error {
-    i.loadAPIs()
+	// i.loadAPIs()
 
 	fmt.Println("XUI module has been loaded")
 	return nil
@@ -27,14 +25,15 @@ func (i XUI) Run() error {
 	return nil
 }
 
+// TODO: del later
 func (i XUI) loadAPIs() {
-    http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		username := r.URL.Query().Get("username")
 		password := r.URL.Query().Get("password")
 
-        if err := Login(username, password); err != nil {
-            log.Printf("Calling login api failed: ", err)
-        }
+		if err := Login(username, password); err != nil {
+			log.Printf("Calling login api failed: ", err)
+		}
 	})
 
 	fmt.Println("XUI apis has been loaded")
