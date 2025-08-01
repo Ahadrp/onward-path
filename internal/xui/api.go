@@ -20,7 +20,7 @@ func Login(username string, password string) error {
 	}
 	url := fmt.Sprintf("%s:%d/%slogin/", HOST, PORT, URI_PATH)
 
-	result, err := ipc.Post(url, params)
+	result, err := ipc.PostLogin(url, params)
 
 	if err != nil {
 		log.Printf("Login of user '%s' failed: '%s'", username, err)

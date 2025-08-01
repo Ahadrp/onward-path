@@ -12,6 +12,10 @@ import (
 	"strings"
 )
 
+var (
+    HTTP_PORT = "2332"
+)
+
 type IPC struct {
 }
 
@@ -20,14 +24,23 @@ func New() *IPC {
 }
 
 func (i IPC) Load() error {
-	fmt.Println("IPC module has been loaded")
+	log.Println("IPC module has been loaded")
 	return nil
 }
 
 func (i IPC) Run() error {
-	go i.tcpListen()
+	// go i.tcpListen()
 
-	fmt.Println("IPC module has been run")
+    log.Printf("Listening to http (2332 port)")
+    httpErrCh := make(chan error)
+    go i.httpListen(httpErrCh)
+    go func() {
+        if err := <-httpErrCh; err != nil {
+            log.Panicf("Error in listening to http (2332 port): ", err)
+        }
+    }()
+
+	log.Println("IPC module has been run")
 	return nil
 }
 
@@ -61,7 +74,14 @@ func (i IPC) tcpListen() {
 	}
 }
 
-func Post(_url string, formData map[string]string) (string, error) {
+func (i IPC) httpListen(errCh chan error) {
+    err := http.ListenAndServe(":" + HTTP_PORT, nil)
+	if err != nil {
+        errCh <- err
+	}
+}
+
+func PostLogin(_url string, formData map[string]string) (string, error) {
 	url := "http://" + _url
 
 	// Prepare form values
