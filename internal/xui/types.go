@@ -1,13 +1,18 @@
 package xui
 
 import (
-	"github.com/google/uuid"
 )
 
 // Top-level structure
-type AddClientRequest struct {
+type AddClientRequestExternalAPI struct {
 	ID       int    `json:"id"`
 	Settings SettingsDecoded `json:"settings"` // Will unmarshal again into SettingsDecoded
+}
+
+// Top-level structure
+type AddClientRequestInternalAPI struct {
+	ID       int    `json:"id"`
+	Settings string `json:"settings"` // Will unmarshal again into SettingsDecoded
 }
 
 // Actual settings structure (embedded in the string)
@@ -16,7 +21,7 @@ type SettingsDecoded struct {
 }
 
 type Client struct {
-	ID         uuid.UUID `json:"id"`
+	ID         string `json:"id"`
 	Flow       string    `json:"flow"`
 	Email      string    `json:"email"`
 	LimitIP    int       `json:"limitIp"`

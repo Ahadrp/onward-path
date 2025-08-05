@@ -50,9 +50,9 @@ func AddClient(w http.ResponseWriter, r *http.Request) {
 	// Set response header
 	w.Header().Set("Content-Type", "application/json")
 
-    var addClientRequest AddClientRequest
+    var addClientRequestExternalAPI AddClientRequestExternalAPI
     bodyBytes, err := io.ReadAll(r.Body)
-    if err := json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&addClientRequest); err != nil {
+    if err := json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&addClientRequestExternalAPI); err != nil {
         log.Printf("HTTP %d - %s: %s", http.StatusBadRequest, "Invalid JSON body",
         string(bodyBytes))
 		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
@@ -60,18 +60,37 @@ func AddClient(w http.ResponseWriter, r *http.Request) {
 	}
     defer r.Body.Close()
 
-    addClientRequest.Settings.Clients[0].ID = uuid.New()
+    addClientRequestExternalAPI.Settings.Clients[0].ID = uuid.New().String()
+
+    internalClientJson, err := json.Marshal(addClientRequestExternalAPI.Settings)
+	if err != nil {
+        log.Printf("json client error")
+	}
+
+    addClientRequestInternalAPI := AddClientRequestInternalAPI{
+        ID: addClientRequestExternalAPI.ID,
+        Settings: string(internalClientJson),
+    }
+
+    /*
     jsonClient, err := json.Marshal(addClientRequest)
     if err != nil {
         log.Printf("Failed to convert client to json: ", err)
         return
     }
+    */
 
-	result, err := ipc.Post(url, string(jsonClient))
+    criaJson, err := json.Marshal(addClientRequestInternalAPI)
+	if err != nil {
+        log.Printf("json error")
+        return
+	}
+
+	result, err := ipc.Post(url, string(criaJson))
     if err != nil {
         log.Printf("Failed to convert client to json: ", err)
         return
     }
-	log.Printf("Client '%s' was added successfully! | output: '%s'", addClientRequest.Settings.Clients[0].Email, result)
+	log.Printf("Client '%s' was added successfully! | output: '%s'", addClientRequestExternalAPI.Settings.Clients[0].Email, result)
 
 }
