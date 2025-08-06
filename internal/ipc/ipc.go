@@ -131,4 +131,3 @@ func Post(_url string, data string) (string, error) {
 
 	return string(body), nil
 }
-

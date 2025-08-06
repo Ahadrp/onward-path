@@ -1,11 +1,10 @@
 package xui
 
-import (
-)
+import ()
 
 // Top-level structure
 type AddClientRequestExternalAPI struct {
-	ID       int    `json:"id"`
+	ID       int             `json:"id"`
 	Settings SettingsDecoded `json:"settings"` // Will unmarshal again into SettingsDecoded
 }
 
@@ -22,13 +21,13 @@ type SettingsDecoded struct {
 
 type Client struct {
 	ID         string `json:"id"`
-	Flow       string    `json:"flow"`
-	Email      string    `json:"email"`
-	LimitIP    int       `json:"limitIp"`
-	TotalGB    int       `json:"totalGB"`
-	ExpiryTime int       `json:"expiryTime"`
-	Enable     bool      `json:"enable"`
-	TgID       string    `json:"tgId"`
-	SubID      string    `json:"subId"`
-	Reset      int       `json:"reset"`
+	Flow       string `json:"flow"`
+	Email      string `json:"email"`
+	LimitIP    int    `json:"limitIp"`
+	TotalGB    int    `json:"totalGB"`
+	ExpiryTime int    `json:"expiryTime"`
+	Enable     bool   `json:"enable"`
+	TgID       string `json:"tgId"`
+	SubID      string `json:"subId"`
+	Reset      int    `json:"reset"`
 }

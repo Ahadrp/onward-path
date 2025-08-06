@@ -1,14 +1,14 @@
 package xui
 
 import (
-    "io"
-    "bytes"
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"io"
 	"log"
-	"onward-path/internal/ipc"
-    "encoding/json"
 	"net/http"
+	"onward-path/internal/ipc"
 )
 
 var (
@@ -39,10 +39,10 @@ func Login(username string, password string) error {
 func AddClient(w http.ResponseWriter, r *http.Request) {
 	url := fmt.Sprintf("%s:%d/%s%saddClient/", HOST, PORT, URI_PATH, BASE_ENDPOINT)
 	// find user base on session. assume we've found it.
-    // TODO: check if user exist with this email.
-    if r.Method != http.MethodPost {
-        errTxt := "Method Not Allowed"
-        log.Printf("HTTP %d - %s", http.StatusMethodNotAllowed, errTxt)
+	// TODO: check if user exist with this email.
+	if r.Method != http.MethodPost {
+		errTxt := "Method Not Allowed"
+		log.Printf("HTTP %d - %s", http.StatusMethodNotAllowed, errTxt)
 		http.Error(w, errTxt, http.StatusMethodNotAllowed)
 		return
 	}
@@ -50,47 +50,47 @@ func AddClient(w http.ResponseWriter, r *http.Request) {
 	// Set response header
 	w.Header().Set("Content-Type", "application/json")
 
-    var addClientRequestExternalAPI AddClientRequestExternalAPI
-    bodyBytes, err := io.ReadAll(r.Body)
-    if err := json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&addClientRequestExternalAPI); err != nil {
-        log.Printf("HTTP %d - %s: %s", http.StatusBadRequest, "Invalid JSON body",
-        string(bodyBytes))
+	var addClientRequestExternalAPI AddClientRequestExternalAPI
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err := json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&addClientRequestExternalAPI); err != nil {
+		log.Printf("HTTP %d - %s: %s", http.StatusBadRequest, "Invalid JSON body",
+			string(bodyBytes))
 		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
 		return
 	}
-    defer r.Body.Close()
+	defer r.Body.Close()
 
-    addClientRequestExternalAPI.Settings.Clients[0].ID = uuid.New().String()
+	addClientRequestExternalAPI.Settings.Clients[0].ID = uuid.New().String()
 
-    internalClientJson, err := json.Marshal(addClientRequestExternalAPI.Settings)
+	internalClientJson, err := json.Marshal(addClientRequestExternalAPI.Settings)
 	if err != nil {
-        log.Printf("json client error")
+		log.Printf("json client error")
 	}
 
-    addClientRequestInternalAPI := AddClientRequestInternalAPI{
-        ID: addClientRequestExternalAPI.ID,
-        Settings: string(internalClientJson),
-    }
+	addClientRequestInternalAPI := AddClientRequestInternalAPI{
+		ID:       addClientRequestExternalAPI.ID,
+		Settings: string(internalClientJson),
+	}
 
-    /*
-    jsonClient, err := json.Marshal(addClientRequest)
-    if err != nil {
-        log.Printf("Failed to convert client to json: ", err)
-        return
-    }
-    */
+	/*
+	   jsonClient, err := json.Marshal(addClientRequest)
+	   if err != nil {
+	       log.Printf("Failed to convert client to json: ", err)
+	       return
+	   }
+	*/
 
-    criaJson, err := json.Marshal(addClientRequestInternalAPI)
+	criaJson, err := json.Marshal(addClientRequestInternalAPI)
 	if err != nil {
-        log.Printf("json error")
-        return
+		log.Printf("json error")
+		return
 	}
 
 	result, err := ipc.Post(url, string(criaJson))
-    if err != nil {
-        log.Printf("Failed to convert client to json: ", err)
-        return
-    }
+	if err != nil {
+		log.Printf("Failed to convert client to json: ", err)
+		return
+	}
 	log.Printf("Client '%s' was added successfully! | output: '%s'", addClientRequestExternalAPI.Settings.Clients[0].Email, result)
 
 }

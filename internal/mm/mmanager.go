@@ -6,11 +6,13 @@ import (
 	"onward-path/api"
 	"onward-path/internal/ipc"
 	"onward-path/internal/xui"
+	"onward-path/internal/usr"
 )
 
 var (
 	IPC *ipc.IPC
 	XUI *xui.XUI
+	USR *usr.USR
 	API *api.API
 )
 
@@ -23,6 +25,11 @@ func Load() error {
 	XUI = xui.New()
 	if err := XUI.Load(); err != nil {
 		log.Panic("XUI has not been initilized")
+	}
+
+	USR = usr.New()
+	if err := USR.Load(); err != nil {
+		log.Panic("USR has not been initilized")
 	}
 
 	API = api.New()
@@ -47,6 +54,13 @@ func Run() error {
 	}
 	if err := XUI.Run(); err != nil {
 		log.Panic("Error while running XUI: ", err)
+	}
+
+	if USR == nil {
+		log.Panic("USR has not been initilized")
+	}
+	if err := USR.Run(); err != nil {
+		log.Panic("Error while running USR: ", err)
 	}
 
 	if API == nil {
