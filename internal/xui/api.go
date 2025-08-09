@@ -16,9 +16,16 @@ var (
 	PORT                 = 18496
 	URI_PATH      string = "t22OMBH6rHZ09Zr/"
 	BASE_ENDPOINT        = "panel/api/inbounds/"
+    ADMIN_USERNAME = "root"
+    ADMIN_PASSWD = "123"
 )
 
 func Login(username string, password string) error {
+    if err := initCookie(); err != nil {
+        log.Println("Login failed because: '%v'", err)
+        return err
+    }
+
 	params := map[string]string{
 		"username": username,
 		"password": password,
@@ -29,6 +36,7 @@ func Login(username string, password string) error {
 
 	if err != nil {
 		log.Printf("Login of user '%s' failed: '%s'", username, err)
+        clearCookie()
 		return err
 	}
 	log.Printf("Login of user '%s' was successful! | output: '%s'", username, result)
@@ -37,6 +45,15 @@ func Login(username string, password string) error {
 }
 
 func AddClient(w http.ResponseWriter, r *http.Request) {
+	if err := Login(ADMIN_USERNAME, ADMIN_PASSWD); err != nil {
+		log.Printf("Login of user '%s' failed: '%s'", ADMIN_USERNAME, err)
+		return
+	}
+
+    addClient(w, r)
+}
+
+func addClient(w http.ResponseWriter, r *http.Request) {
 	url := fmt.Sprintf("%s:%d/%s%saddClient/", HOST, PORT, URI_PATH, BASE_ENDPOINT)
 	// find user base on session. assume we've found it.
 	// TODO: check if user exist with this email.

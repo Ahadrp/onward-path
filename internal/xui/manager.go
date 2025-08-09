@@ -12,6 +12,23 @@ var (
 	Cookie *cookiejar.Jar
 )
 
+func initCookie() error {
+    if Cookie == nil {
+        _Cookie, err := cookiejar.New(nil)
+        if err != nil {
+            log.Println("Failed to create cookie jar: %v", err)
+            return err
+        }
+        Cookie = _Cookie
+        log.Println("Cookie has been successfully initilized!")
+    }
+    return nil
+}
+
+func clearCookie() {
+    Cookie = nil
+}
+
 type XUI struct {
 }
 
