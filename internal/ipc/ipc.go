@@ -10,6 +10,8 @@ import (
 	"net/http"
 	netURL "net/url"
 	"strings"
+
+	"net/http/cookiejar"
 )
 
 var (
@@ -81,7 +83,7 @@ func (i IPC) httpListen(errCh chan error) {
 	}
 }
 
-func PostLogin(_url string, formData map[string]string) (string, error) {
+func PostLogin(_url string, formData map[string]string, cookie *cookiejar.Jar) (string, error) {
 	url := "http://" + _url
 
 	// Prepare form values
@@ -90,42 +92,79 @@ func PostLogin(_url string, formData map[string]string) (string, error) {
 		data.Set(k, v)
 	}
 
-	resp, err := http.Post(url, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()))
+	// Create cookie jar
+	jar, err := cookiejar.New(nil)
 	if err != nil {
-		log.Printf("Error in sending post request | URL: '%s' | Data: '%s' | Error: '%s'", url, data, err)
+		return "", fmt.Errorf("failed to create cookie jar: %w", err)
+	}
+
+	client := &http.Client{
+		Jar: jar,
+	}
+
+	// Create POST request
+	req, err := http.NewRequest("POST", url, strings.NewReader(data.Encode()))
+	if err != nil {
+		log.Printf("Error creating request | URL: '%s' | Error: '%s'", url, err)
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	// Send request
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Error sending request | URL: '%s' | Error: '%s'", url, err)
 		return "", err
 	}
 	defer resp.Body.Close()
 
-	// Read response body
+	// Read body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("Error in reading post request | URL: '%s' | Data: '%s' | Error: '%s'", url, data, err)
+		log.Printf("Error reading response | URL: '%s' | Error: '%s'", url, err)
 		return "", err
 	}
 
-	// Check status code
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		log.Printf("Error in reading post request | URL: '%s' | Data: '%s' | Status code: '%d' | Error: '%s'", url, data, resp.StatusCode, err)
+		log.Printf("Unexpected status code | URL: '%s' | Code: %d", url, resp.StatusCode)
 		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	log.Printf("Sending post request was successful! | URL: '%s' | Data: '%s' | Response: '%s'", url, data, string(body))
+	// set cookie
+	*cookie = *jar
+
+	log.Printf("PostLogin success | URL: '%s' | Response: '%s'", url, string(body))
+
 	return string(body), nil
 }
 
-func Post(_url string, data string) (string, error) {
+func Post(_url string, data string, cookie *cookiejar.Jar) (string, error) {
 	url := "http://" + _url
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(data)))
+
+	// Create an HTTP client with the cookie jar
+	client := &http.Client{
+		Jar: cookie,
+	}
+
+	// Prepare request
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(data)))
 	if err != nil {
-		log.Printf("Error in sending post request | URL: '%s' | Data: '%s' | Status code: '%d' | Error: '%s'", url, data, resp.StatusCode, err)
+		log.Printf("Error creating request | URL: '%s' | Data: '%s' | Error: '%s'", url, data, err)
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send request using the custom client
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Error sending POST request | URL: '%s' | Data: '%s' | Error: '%s'", url, data, err)
 		return "", err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("Error in reading post request | URL: '%s' | Data: '%s' | Status code: '%d' | Error: '%s'", url, data, resp.StatusCode, err)
+		log.Printf("Error reading POST response | URL: '%s' | Data: '%s' | Status code: '%d' | Error: '%s'", url, data, resp.StatusCode, err)
 		return "", err
 	}
 

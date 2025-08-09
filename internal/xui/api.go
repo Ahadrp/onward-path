@@ -25,7 +25,7 @@ func Login(username string, password string) error {
 	}
 	url := fmt.Sprintf("%s:%d/%slogin/", HOST, PORT, URI_PATH)
 
-	result, err := ipc.PostLogin(url, params)
+	result, err := ipc.PostLogin(url, params, Cookie)
 
 	if err != nil {
 		log.Printf("Login of user '%s' failed: '%s'", username, err)
@@ -86,7 +86,7 @@ func AddClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := ipc.Post(url, string(criaJson))
+	result, err := ipc.Post(url, string(criaJson), Cookie)
 	if err != nil {
 		log.Printf("Failed to convert client to json: ", err)
 		return

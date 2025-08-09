@@ -5,8 +5,8 @@ import (
 	"log"
 	"onward-path/api"
 	"onward-path/internal/ipc"
-	"onward-path/internal/xui"
 	"onward-path/internal/usr"
+	"onward-path/internal/xui"
 )
 
 var (

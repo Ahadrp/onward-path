@@ -4,6 +4,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"net/http/cookiejar"
+)
+
+var (
+	Cookie *cookiejar.Jar
 )
 
 type XUI struct {
@@ -15,6 +21,12 @@ func New() *XUI {
 
 func (i XUI) Load() error {
 	// i.loadAPIs()
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		log.Fatalf("Failed to create cookie jar: %v", err)
+	}
+	Cookie = jar
+	fmt.Println("Cookie has been initilized")
 
 	fmt.Println("XUI module has been loaded")
 	return nil

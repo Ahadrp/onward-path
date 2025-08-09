@@ -6,7 +6,7 @@ import (
 )
 
 type USR struct {
-	cookie *cookiejar.Jar
+	Cookie *cookiejar.Jar
 }
 
 func New() *USR {
@@ -16,7 +16,7 @@ func New() *USR {
 	}
 
 	return &USR{
-		cookie: jar,
+		Cookie: jar,
 	}
 }
 
