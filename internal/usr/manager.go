@@ -3,6 +3,7 @@ package usr
 import (
 	"log"
 	"net/http/cookiejar"
+    "internal/onward-path/config"
 )
 
 var (
@@ -25,6 +26,13 @@ func New() *USR {
 }
 
 func (u USR) Load() error {
+    Mysql = &_Mysql{}
+    if err := Mysql.LoadConfig(); err != nil {
+        log.Println("Couldn't load Mysql config: %v", err)
+        return err
+    }
+    log.Println("Mysql config has been set-up!")
+
 	log.Println("USR module has been loaded")
 	return nil
 }
