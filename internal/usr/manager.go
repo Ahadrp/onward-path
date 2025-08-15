@@ -5,6 +5,10 @@ import (
 	"net/http/cookiejar"
 )
 
+var (
+    Mysql *_Mysql
+)
+
 type USR struct {
 	Cookie *cookiejar.Jar
 }
