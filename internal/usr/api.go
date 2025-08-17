@@ -58,7 +58,7 @@ func TestUserExistance(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-    query := fmt.Sprintf("SELECT 1 FROM user WHERE email='%s' AND password='%s'", loginParam.Email, loginParam.Passwd)
+    query := fmt.Sprintf("SELECT email, password FROM user WHERE email=? AND password=?")
     username := ""
     passwd := ""
 

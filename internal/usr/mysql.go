@@ -14,15 +14,15 @@ import (
 )
 
 type _Mysql struct {
-    username string `json:"username"`
-    password string `json:"passwd"`
-    ip string `json:"ip"`
-    port string `json:"port"`
-    database string `json:"database"`
-    table string `json:"table"`
+    Username string `json:"username"`
+    Password string `json:"passwd"`
+    Ip string `json:"ip"`
+    Port string `json:"port"`
+    Database string `json:"database"`
+    Table string `json:"table"`
 }
 
-func (m _Mysql) Load() error {
+func (m *_Mysql) Load() error {
 	if err := m.loadConfig(); err != nil {
 		log.Printf("Couldn't load Mysql config : %v", err)
 		return err
@@ -32,7 +32,7 @@ func (m _Mysql) Load() error {
     return nil
 }
 
-func (m _Mysql) loadConfig() error {
+func (m *_Mysql) loadConfig() error {
     // Read file
 	data, err := os.ReadFile(config.MYSQL_CONFIG)
 	if err != nil {
@@ -41,7 +41,7 @@ func (m _Mysql) loadConfig() error {
 	}
 
 	// Parse JSON
-	if err := json.Unmarshal(data, &m); err != nil {
+	if err := json.Unmarshal(data, m); err != nil {
 		log.Printf("Couldn't unmarshal mysql config json: %v", err)
 		return err
 	}
@@ -49,8 +49,9 @@ func (m _Mysql) loadConfig() error {
     return nil
 }
 
-func (m _Mysql) SendQuery(query string, callback func(db *sql.DB) error) error {
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", m.username, m.password, m.ip, m.port, m.database)
+func (m *_Mysql) SendQuery(query string, callback func(db *sql.DB) error) error {
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", m.Username, m.Password, m.Ip, m.Port, m.Database)
+
     db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		log.Printf("Couldn't connect to mysql: %v", err)
