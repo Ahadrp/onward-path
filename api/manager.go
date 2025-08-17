@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"onward-path/internal/xui"
+	"onward-path/internal/usr"
 )
 
 type API struct {
@@ -37,6 +38,10 @@ func (i API) loadAPIs() {
 
 	http.HandleFunc("/addClient", func(w http.ResponseWriter, r *http.Request) {
 		xui.AddClient(w, r)
+	})
+
+	http.HandleFunc("/TestUserExistance", func(w http.ResponseWriter, r *http.Request) {
+		usr.TestUserExistance(w, r)
 	})
 
 	log.Println("API apis has been loaded")

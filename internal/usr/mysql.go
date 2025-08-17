@@ -7,7 +7,7 @@ import (
     "log"
 
 	_ "github.com/go-sql-driver/mysql"
-    "internal/onward-path/config"
+    "onward-path/config"
 
     "encoding/json"
 	"os"
@@ -18,10 +18,21 @@ type _Mysql struct {
     password string `json:"passwd"`
     ip string `json:"ip"`
     port string `json:"port"`
+    database string `json:"database"`
     table string `json:"table"`
 }
 
-func (m _Mysql) LoadConfig() error {
+func (m _Mysql) Load() error {
+	if err := m.loadConfig(); err != nil {
+		log.Printf("Couldn't load Mysql config : %v", err)
+		return err
+	}
+    log.Printf("Mysql has been loaded successfully!")
+
+    return nil
+}
+
+func (m _Mysql) loadConfig() error {
     // Read file
 	data, err := os.ReadFile(config.MYSQL_CONFIG)
 	if err != nil {
@@ -39,7 +50,7 @@ func (m _Mysql) LoadConfig() error {
 }
 
 func (m _Mysql) SendQuery(query string, callback func(db *sql.DB) error) error {
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", m.username, m.password, m.ip, m.port, m.table)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", m.username, m.password, m.ip, m.port, m.database)
     db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		log.Printf("Couldn't connect to mysql: %v", err)
