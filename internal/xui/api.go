@@ -12,19 +12,19 @@ import (
 )
 
 var (
-	HOST                 = "192.168.109.128"
-	PORT                 = 18496
-	URI_PATH      string = "t22OMBH6rHZ09Zr/"
-	BASE_ENDPOINT        = "panel/api/inbounds/"
-    ADMIN_USERNAME = "root"
-    ADMIN_PASSWD = "123"
+	HOST                  = "192.168.109.128"
+	PORT                  = 18496
+	URI_PATH       string = "t22OMBH6rHZ09Zr/"
+	BASE_ENDPOINT         = "panel/api/inbounds/"
+	ADMIN_USERNAME        = "root"
+	ADMIN_PASSWD          = "123"
 )
 
 func Login(username string, password string) error {
-    if err := initCookie(); err != nil {
-        log.Println("Login failed because: '%v'", err)
-        return err
-    }
+	if err := initCookie(); err != nil {
+		log.Println("Login failed because: '%v'", err)
+		return err
+	}
 
 	params := map[string]string{
 		"username": username,
@@ -36,7 +36,7 @@ func Login(username string, password string) error {
 
 	if err != nil {
 		log.Printf("Login of user '%s' failed: '%s'", username, err)
-        clearCookie()
+		clearCookie()
 		return err
 	}
 	log.Printf("Login of user '%s' was successful! | output: '%s'", username, result)
@@ -50,7 +50,7 @@ func AddClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-    addClient(w, r)
+	addClient(w, r)
 }
 
 func addClient(w http.ResponseWriter, r *http.Request) {

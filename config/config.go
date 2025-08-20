@@ -1,16 +1,15 @@
 package config
 
 import (
- "log"
+	"log"
 )
 
 const (
-    CONFIG_PATH = "/etc/onward-path/onward-path.conf"
-    MYSQL_CONFIG = "/etc/onward-path/mysql.conf"
+	CONFIG_PATH  = "/etc/onward-path/onward-path.conf"
+	MYSQL_CONFIG = "/etc/onward-path/mysql.conf"
 )
 
-var (
-)
+var ()
 
 type Config struct {
 }
@@ -28,4 +27,3 @@ func (c Config) Run() error {
 	log.Println("Config module has been run")
 	return nil
 }
-

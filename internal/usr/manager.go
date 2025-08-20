@@ -6,7 +6,7 @@ import (
 )
 
 var (
-    Mysql *_Mysql
+	Mysql *_Mysql
 )
 
 type USR struct {
@@ -25,12 +25,12 @@ func New() *USR {
 }
 
 func (u USR) Load() error {
-    Mysql = &_Mysql{}
-    if err := Mysql.Load(); err != nil {
-        log.Println("Couldn't load Mysql: %v", err)
-        return err
-    }
-    log.Println("Mysql has been set-up!")
+	Mysql = &_Mysql{}
+	if err := Mysql.Load(); err != nil {
+		log.Println("Couldn't load Mysql: %v", err)
+		return err
+	}
+	log.Println("Mysql has been set-up!")
 
 	log.Println("USR module has been loaded")
 	return nil

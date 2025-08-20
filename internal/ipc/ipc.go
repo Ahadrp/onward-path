@@ -86,9 +86,9 @@ func (i IPC) httpListen(errCh chan error) {
 func PostLogin(_url string, formData map[string]string, cookie *cookiejar.Jar) (string, error) {
 	url := "http://" + _url
 
-    if cookie == nil {
+	if cookie == nil {
 		return "", fmt.Errorf("PostLogin | cookie can not be null")
-    }
+	}
 
 	// Prepare form values
 	data := netURL.Values{}
@@ -145,9 +145,9 @@ func PostLogin(_url string, formData map[string]string, cookie *cookiejar.Jar) (
 func Post(_url string, data string, cookie *cookiejar.Jar) (string, error) {
 	url := "http://" + _url
 
-    if cookie == nil {
+	if cookie == nil {
 		return "", fmt.Errorf("Post | cookie can not be null")
-    }
+	}
 
 	// Create an HTTP client with the cookie jar
 	client := &http.Client{

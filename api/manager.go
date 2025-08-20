@@ -3,8 +3,8 @@ package api
 import (
 	"log"
 	"net/http"
-	"onward-path/internal/xui"
 	"onward-path/internal/usr"
+	"onward-path/internal/xui"
 )
 
 type API struct {
@@ -27,7 +27,7 @@ func (i API) Run() error {
 }
 
 func (i API) loadAPIs() {
-	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/loginAdmin", func(w http.ResponseWriter, r *http.Request) {
 		username := r.URL.Query().Get("username")
 		password := r.URL.Query().Get("password")
 
@@ -38,6 +38,14 @@ func (i API) loadAPIs() {
 
 	http.HandleFunc("/addClient", func(w http.ResponseWriter, r *http.Request) {
 		xui.AddClient(w, r)
+	})
+
+	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		usr.Login(w, r)
+	})
+
+	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
+		usr.Register(w, r)
 	})
 
 	http.HandleFunc("/TestUserExistance", func(w http.ResponseWriter, r *http.Request) {
