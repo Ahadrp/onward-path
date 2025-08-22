@@ -178,3 +178,39 @@ func Post(_url string, data string, cookie *cookiejar.Jar) (string, error) {
 
 	return string(body), nil
 }
+
+func Get(_url string, data string, cookie *cookiejar.Jar) (string, error) {
+	url := "http://" + _url + data
+
+	if cookie == nil {
+		return "", fmt.Errorf("Get | cookie can not be null")
+	}
+
+	// Create an HTTP client with the cookie jar
+	client := &http.Client{
+		Jar: cookie,
+	}
+
+	// Prepare request
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Printf("Error creating GET request | URL: '%s' | Error: '%s'", url, err)
+		return "", err
+	}
+
+	// Send request using the custom client
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Error sending GET request | URL: '%s' | Error: '%s'", url, err)
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Error reading GET response | URL: '%s' | Status code: '%d' | Error: '%s'", url, resp.StatusCode, err)
+		return "", err
+	}
+
+	return string(body), nil
+}

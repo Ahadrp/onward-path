@@ -53,6 +53,43 @@ func AddClient(w http.ResponseWriter, r *http.Request) {
 	addClient(w, r)
 }
 
+func GetClient(email string) (json.RawMessage, error) {
+	if err := Login(ADMIN_USERNAME, ADMIN_PASSWD); err != nil {
+		log.Printf("Login of user '%s' failed: '%s'", ADMIN_USERNAME, err)
+		return json.RawMessage{}, err
+	}
+
+	var _client json.RawMessage
+	var err error
+	if _client, err = getClient(email); err != nil {
+		log.Printf("Couldn't get user '%s': %v", email, err)
+		return json.RawMessage{}, err
+	}
+
+	return _client, nil
+}
+
+func getClient(email string) (json.RawMessage, error) {
+	endPoint := "getClientTraffics/"
+	url := fmt.Sprintf("%s:%d/%s%s%s", HOST, PORT, URI_PATH, BASE_ENDPOINT, endPoint)
+
+	result, err := ipc.Get(url, email, Cookie)
+	if err != nil {
+		log.Printf("Sending Get request failed: '%v'", err)
+		return json.RawMessage{}, err
+	}
+	log.Printf(result)
+
+	var xuiResp XUIResponse
+	err = json.Unmarshal([]byte(result), &xuiResp)
+	if err != nil {
+		log.Printf("Couldn't parse xui response: '%v'", err)
+		return json.RawMessage{}, err
+	}
+
+	return xuiResp.Obj, nil
+}
+
 func addClient(w http.ResponseWriter, r *http.Request) {
 	url := fmt.Sprintf("%s:%d/%s%saddClient/", HOST, PORT, URI_PATH, BASE_ENDPOINT)
 	// find user base on session. assume we've found it.

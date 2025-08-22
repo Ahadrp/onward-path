@@ -1,6 +1,8 @@
 package xui
 
-import ()
+import (
+	"encoding/json"
+)
 
 // Top-level structure
 type AddClientRequestExternalAPI struct {
@@ -30,4 +32,22 @@ type Client struct {
 	TgID       string `json:"tgId"`
 	SubID      string `json:"subId"`
 	Reset      int    `json:"reset"`
+}
+
+type XUIResponse struct {
+	Success bool            `json:"success"`
+	Message string          `json:"msg"`
+	Obj     json.RawMessage `json:"obj"`
+}
+
+type GetClientResponse struct {
+	ID        int    `json:"id"`
+	InboundID int    `json:"inboundId"`
+	Enable    bool   `json:"enable"`
+	Email     string `json:"email"`
+	Up        int    `json:"up"`
+	Down      int    `json:"down"`
+	Expiry    int    `json:"expiryTime"`
+	Total     int    `json:"total"`
+	Reset     int    `json:"reset"`
 }

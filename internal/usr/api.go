@@ -8,6 +8,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+
+	"onward-path/internal/xui"
 )
 
 const (
@@ -72,6 +74,52 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("Registeration of User '%s' was successful!", loginParam.Email)
+}
+
+func BuyConfig(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		errTxt := "Method Not Allowed"
+		log.Printf("HTTP %d - %s", http.StatusMethodNotAllowed, errTxt)
+		http.Error(w, errTxt, http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Set response header
+	w.Header().Set("Content-Type", "application/json")
+
+	var loginParam LoginParam
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err = json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&loginParam); err != nil {
+		log.Printf("HTTP %d - %s: %s | Error: %v", http.StatusBadRequest, "Invalid JSON body",
+			string(bodyBytes), err)
+		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	if err := login(loginParam); err != nil {
+		log.Printf("Login of user '%s' failed: '%v'", loginParam.Email, err)
+		return
+	}
+
+	var _client json.RawMessage
+	if _client, err = xui.GetClient(loginParam.Email); err != nil {
+		log.Printf("Get client '%s' failed: '%v'", loginParam.Email, err)
+		return
+	}
+
+	var client xui.GetClientResponse
+	err = json.Unmarshal(_client, &client)
+	if err != nil {
+		log.Printf("Failed to process client '%s' json: '%v'", loginParam.Email, err)
+	}
+
+	if client.Email == "" {
+		log.Printf("User '%s' does not have an account", loginParam.Email)
+	} else {
+		log.Printf("user '%s' has already an account!", client.Email)
+	}
+
 }
 
 func addUser(loginParam LoginParam) error {

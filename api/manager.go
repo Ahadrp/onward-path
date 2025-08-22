@@ -52,5 +52,9 @@ func (i API) loadAPIs() {
 		usr.TestUserExistance(w, r)
 	})
 
+	http.HandleFunc("/BuyConfig", func(w http.ResponseWriter, r *http.Request) {
+		usr.BuyConfig(w, r)
+	})
+
 	log.Println("API apis has been loaded")
 }
