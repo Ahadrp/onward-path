@@ -53,6 +53,15 @@ func AddClient(w http.ResponseWriter, r *http.Request) {
 	addClient(w, r)
 }
 
+func AddClientInternal(addClientRequestExternalAPI AddClientRequestExternalAPI) {
+	if err := Login(ADMIN_USERNAME, ADMIN_PASSWD); err != nil {
+		log.Printf("Login of user '%s' failed: '%s'", ADMIN_USERNAME, err)
+		return
+	}
+
+	addClient_Internal(addClientRequestExternalAPI)
+}
+
 func GetClient(email string) (json.RawMessage, error) {
 	if err := Login(ADMIN_USERNAME, ADMIN_PASSWD); err != nil {
 		log.Printf("Login of user '%s' failed: '%s'", ADMIN_USERNAME, err)
@@ -113,6 +122,44 @@ func addClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
+
+	addClientRequestExternalAPI.Settings.Clients[0].ID = uuid.New().String()
+
+	internalClientJson, err := json.Marshal(addClientRequestExternalAPI.Settings)
+	if err != nil {
+		log.Printf("json client error")
+	}
+
+	addClientRequestInternalAPI := AddClientRequestInternalAPI{
+		ID:       addClientRequestExternalAPI.ID,
+		Settings: string(internalClientJson),
+	}
+
+	/*
+	   jsonClient, err := json.Marshal(addClientRequest)
+	   if err != nil {
+	       log.Printf("Failed to convert client to json: ", err)
+	       return
+	   }
+	*/
+
+	criaJson, err := json.Marshal(addClientRequestInternalAPI)
+	if err != nil {
+		log.Printf("json error")
+		return
+	}
+
+	result, err := ipc.Post(url, string(criaJson), Cookie)
+	if err != nil {
+		log.Printf("Failed to convert client to json: ", err)
+		return
+	}
+	log.Printf("Client '%s' was added successfully! | output: '%s'", addClientRequestExternalAPI.Settings.Clients[0].Email, result)
+
+}
+
+func addClient_Internal(addClientRequestExternalAPI AddClientRequestExternalAPI) {
+	url := fmt.Sprintf("%s:%d/%s%saddClient/", HOST, PORT, URI_PATH, BASE_ENDPOINT)
 
 	addClientRequestExternalAPI.Settings.Clients[0].ID = uuid.New().String()
 

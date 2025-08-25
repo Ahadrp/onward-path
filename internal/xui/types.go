@@ -6,6 +6,7 @@ import (
 
 // Top-level structure
 type AddClientRequestExternalAPI struct {
+	Server   int             `json:"server"`
 	ID       int             `json:"id"`
 	Settings SettingsDecoded `json:"settings"` // Will unmarshal again into SettingsDecoded
 }

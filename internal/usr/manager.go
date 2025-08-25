@@ -5,6 +5,11 @@ import (
 	"net/http/cookiejar"
 )
 
+const (
+	USER_TABLE    = "user"
+	SESSION_TABLE = "sessions"
+)
+
 var (
 	Mysql *_Mysql
 )

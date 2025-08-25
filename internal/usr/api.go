@@ -12,10 +12,6 @@ import (
 	"onward-path/internal/xui"
 )
 
-const (
-	USER_TABLE = "user"
-)
-
 func Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		errTxt := "Method Not Allowed"
@@ -87,11 +83,12 @@ func BuyConfig(w http.ResponseWriter, r *http.Request) {
 	// Set response header
 	w.Header().Set("Content-Type", "application/json")
 
+	// var addClientRequestExternalAPI AddClientRequestExternalAPI
 	var loginParam LoginParam
 	bodyBytes, err := io.ReadAll(r.Body)
-	if err = json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&loginParam); err != nil {
-		log.Printf("HTTP %d - %s: %s | Error: %v", http.StatusBadRequest, "Invalid JSON body",
-			string(bodyBytes), err)
+	if err := json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&loginParam); err != nil {
+		log.Printf("HTTP %d - %s: %s", http.StatusBadRequest, "Invalid JSON body",
+			string(bodyBytes))
 		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
 		return
 	}
@@ -161,6 +158,24 @@ func login(loginParam LoginParam) error {
 	}); err != nil {
 		log.Printf("No user with username '%s' password '%s'", loginParam.Email,
 			loginParam.Passwd)
+		return err
+	}
+
+	// create a session.
+
+	// create token
+	token := GenerateRandomToken()
+
+	// add token to db
+	query = fmt.Sprintf("INSERT INTO %s (email, token) VALUES (?, ?)", SESSION_TABLE)
+	if err := Mysql.SendQuery(query, func(db *sql.DB) error {
+		_, err := db.Exec(query, loginParam.Email, token)
+		if err != nil {
+			log.Printf("Couldn't add session of user '%s' to database: '%v'", loginParam.Email, err)
+		}
+		return err
+	}); err != nil {
+		log.Printf("Couldn't send query to db: '%v'", loginParam.Email, err)
 		return err
 	}
 
