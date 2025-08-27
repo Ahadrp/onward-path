@@ -8,6 +8,7 @@ import (
 const (
 	USER_TABLE    = "user"
 	SESSION_TABLE = "sessions"
+	SESSION_NAME  = "onwardpath_session_token"
 )
 
 var (

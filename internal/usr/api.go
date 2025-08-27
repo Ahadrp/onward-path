@@ -33,9 +33,24 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	if err := login(loginParam); err != nil {
+	if err := findUser(loginParam); err != nil {
+		log.Printf("Finding user '%s' was failed: '%v'", err)
+	}
+
+	var token string
+	if token, err = login(loginParam); err != nil {
 		log.Printf("Login of user '%s' was failed: '%v'", err)
 	}
+
+	// return token to browser as a cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     SESSION_NAME,
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,  // JS cannot read it
+		Secure:   false, // set to true if HTTPS
+	})
+
 	log.Printf("Login of user '%s' was successful!", loginParam.Email)
 }
 
@@ -60,7 +75,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	if err := login(loginParam); err == nil { // Login was successful. So, user is exists!
+	if err := findUser(loginParam); err == nil { // Login was successful. So, user is exists!
 		log.Printf("User '%s' is already  exists!", loginParam.Email)
 		return
 	}
@@ -80,6 +95,16 @@ func BuyConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cookie, err := r.Cookie(SESSION_NAME)
+	if err != nil {
+		http.Error(w, "Missing session token", http.StatusUnauthorized)
+		return
+	}
+
+	token := cookie.Value
+	// TODO: rm later
+	fmt.Println("Token:", token)
+
 	// Set response header
 	w.Header().Set("Content-Type", "application/json")
 
@@ -94,25 +119,26 @@ func BuyConfig(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	if err := login(loginParam); err != nil {
-		log.Printf("Login of user '%s' failed: '%v'", loginParam.Email, err)
+	email, err := findUserByToken(token)
+	if err != nil {
+		log.Printf("Login of user '%s' failed: '%v'", email, err)
 		return
 	}
 
 	var _client json.RawMessage
-	if _client, err = xui.GetClient(loginParam.Email); err != nil {
-		log.Printf("Get client '%s' failed: '%v'", loginParam.Email, err)
+	if _client, err = xui.GetClient(email); err != nil {
+		log.Printf("Get client '%s' failed: '%v'", email, err)
 		return
 	}
 
 	var client xui.GetClientResponse
 	err = json.Unmarshal(_client, &client)
 	if err != nil {
-		log.Printf("Failed to process client '%s' json: '%v'", loginParam.Email, err)
+		log.Printf("Failed to process client '%s' json: '%v'", email, err)
 	}
 
 	if client.Email == "" {
-		log.Printf("User '%s' does not have an account", loginParam.Email)
+		log.Printf("User '%s' does not have an account", email)
 	} else {
 		log.Printf("user '%s' has already an account!", client.Email)
 	}
@@ -141,7 +167,7 @@ func addUser(loginParam LoginParam) error {
 	return nil
 }
 
-func login(loginParam LoginParam) error {
+func findUser(loginParam LoginParam) error {
 	if Mysql == nil {
 		err := "Mysql obj hasn't been initilized!"
 		log.Printf(err)
@@ -149,25 +175,55 @@ func login(loginParam LoginParam) error {
 	}
 
 	query := fmt.Sprintf("SELECT email, password FROM %s WHERE email=? AND password=?", USER_TABLE)
-	username := ""
+	email := ""
 	passwd := ""
 
 	if err := Mysql.SendQuery(query, func(db *sql.DB) error {
-		err := db.QueryRow(query, loginParam.Email, loginParam.Passwd).Scan(&username, &passwd)
+		err := db.QueryRow(query, loginParam.Email, loginParam.Passwd).Scan(&email, &passwd)
 		return err
 	}); err != nil {
-		log.Printf("No user with username '%s' password '%s'", loginParam.Email,
+		log.Printf("No user with email '%s' password '%s'", loginParam.Email,
 			loginParam.Passwd)
 		return err
 	}
 
-	// create a session.
+	return nil
+}
+
+func findUserByToken(token string) (string, error) {
+	if Mysql == nil {
+		err := "Mysql obj hasn't been initilized!"
+		log.Printf(err)
+		return "", fmt.Errorf(err)
+	}
+
+	// query to db for finding user
+	query := fmt.Sprintf("SELECT email FROM %s WHERE token=?", SESSION_TABLE)
+	email := ""
+
+	if err := Mysql.SendQuery(query, func(db *sql.DB) error {
+		err := db.QueryRow(query, token).Scan(&email)
+		return err
+	}); err != nil {
+		log.Printf("Couldn't send query to db: '%v'", err)
+		return "", err
+	}
+
+	return email, nil
+}
+
+func login(loginParam LoginParam) (string, error) {
+	if Mysql == nil {
+		err := "Mysql obj hasn't been initilized!"
+		log.Printf(err)
+		return "", fmt.Errorf(err)
+	}
 
 	// create token
 	token := GenerateRandomToken()
 
 	// add token to db
-	query = fmt.Sprintf("INSERT INTO %s (email, token) VALUES (?, ?)", SESSION_TABLE)
+	query := fmt.Sprintf("INSERT INTO %s (email, token) VALUES (?, ?)", SESSION_TABLE)
 	if err := Mysql.SendQuery(query, func(db *sql.DB) error {
 		_, err := db.Exec(query, loginParam.Email, token)
 		if err != nil {
@@ -176,10 +232,10 @@ func login(loginParam LoginParam) error {
 		return err
 	}); err != nil {
 		log.Printf("Couldn't send query to db: '%v'", loginParam.Email, err)
-		return err
+		return "", err
 	}
 
-	return nil
+	return token, nil
 }
 
 func TestUserExistance(w http.ResponseWriter, r *http.Request) {
@@ -210,14 +266,14 @@ func TestUserExistance(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	query := fmt.Sprintf("SELECT email, password FROM %s WHERE email=? AND password=?", USER_TABLE)
-	username := ""
+	email := ""
 	passwd := ""
 
 	if err = Mysql.SendQuery(query, func(db *sql.DB) error {
-		err := db.QueryRow(query, loginParam.Email, loginParam.Passwd).Scan(&username, &passwd)
+		err := db.QueryRow(query, loginParam.Email, loginParam.Passwd).Scan(&email, &passwd)
 		return err
 	}); err != nil {
-		log.Printf("No user with username '%s' password '%s'", loginParam.Email,
+		log.Printf("No user with email '%s' password '%s'", loginParam.Email,
 			loginParam.Passwd)
 		return
 	}
