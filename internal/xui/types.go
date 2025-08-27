@@ -19,10 +19,10 @@ type AddClientRequestInternalAPI struct {
 
 // Actual settings structure (embedded in the string)
 type SettingsDecoded struct {
-	Clients []Client `json:"clients"`
+	Clients []ClientParam `json:"clients"`
 }
 
-type Client struct {
+type ClientParam struct {
 	ID         string `json:"id"`
 	Flow       string `json:"flow"`
 	Email      string `json:"email"`
@@ -42,6 +42,10 @@ type XUIResponse struct {
 }
 
 type GetClientResponse struct {
+    Client
+}
+
+type Client struct {
 	ID        int    `json:"id"`
 	InboundID int    `json:"inboundId"`
 	Enable    bool   `json:"enable"`

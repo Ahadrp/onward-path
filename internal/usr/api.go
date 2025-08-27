@@ -109,9 +109,9 @@ func BuyConfig(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	// var addClientRequestExternalAPI AddClientRequestExternalAPI
-	var loginParam LoginParam
+	var addClientParam AddClientParam
 	bodyBytes, err := io.ReadAll(r.Body)
-	if err := json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&loginParam); err != nil {
+	if err := json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&addClientParam); err != nil {
 		log.Printf("HTTP %d - %s: %s", http.StatusBadRequest, "Invalid JSON body",
 			string(bodyBytes))
 		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
@@ -138,9 +138,10 @@ func BuyConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if client.Email == "" {
-		log.Printf("User '%s' does not have an account", email)
+        buyConfig(&addClientParam)
+		log.Printf("Account for '%s' has been created!", email)
 	} else {
-		log.Printf("user '%s' has already an account!", client.Email)
+		log.Printf("User '%s' has already an account!", client.Email)
 	}
 
 }
