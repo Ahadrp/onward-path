@@ -2,7 +2,6 @@ package xui
 
 import (
 	"log"
-	"fmt"
 
 	"onward-path/config"
 
@@ -11,13 +10,13 @@ import (
 )
 
 type _Config struct {
-    ServerConfigList []serverConfig `json:"server_list"`
+	ServerConfigList []serverConfig `json:"server_list"`
 }
 
 func newConfig() *_Config {
-    return &_Config{
-            ServerConfigList: []serverConfig{},
-        }
+	return &_Config{
+		ServerConfigList: []serverConfig{},
+	}
 }
 
 func (c *_Config) Load() error {
@@ -39,31 +38,31 @@ func (c *_Config) loadConfig() error {
 	}
 
 	// Parse JSON
-    var configDTO _ConfigDTO
+	var configDTO _ConfigDTO
 	if err := json.Unmarshal(data, &configDTO); err != nil {
 		log.Printf("Couldn't unmarshal xui config json: %v", err)
 		return err
 	}
-    fmt.Println(fmt.Printf("Main config IP: '%s'", configDTO.ServerConfigList[0].Host))
 
-    for _, _serverConf := range configDTO.ServerConfigList {
-        _serverConfig := serverConfig{
-            id:           _serverConf.ID,
-            host:         _serverConf.Host,
-            port:         _serverConf.Port,
-            uriPath:      _serverConf.URIPath,
-            baseEndpoint: _serverConf.BaseEndpoint,
-            adminUser:    _serverConf.AdminUser,
-            adminPass:    _serverConf.AdminPass,
-        }
-        c.ServerConfigList = append(c.ServerConfigList, _serverConfig)
-    }
+	// Add configs
+	for _, _serverConf := range configDTO.ServerConfigList {
+		_serverConfig := serverConfig{
+			id:           _serverConf.ID,
+			host:         _serverConf.Host,
+			port:         _serverConf.Port,
+			uriPath:      _serverConf.URIPath,
+			baseEndpoint: _serverConf.BaseEndpoint,
+			adminUser:    _serverConf.AdminUser,
+			adminPass:    _serverConf.AdminPass,
+		}
+		c.ServerConfigList = append(c.ServerConfigList, _serverConfig)
+	}
 
 	return nil
 }
 
 type _ConfigDTO struct {
-    ServerConfigList []serverConfigDTO `json:"server_list"`
+	ServerConfigList []serverConfigDTO `json:"server_list"`
 }
 
 // internal config (private)

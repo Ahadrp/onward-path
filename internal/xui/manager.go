@@ -1,17 +1,17 @@
 package xui
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-    "encoding/json"
 
 	"net/http/cookiejar"
 )
 
 var (
 	Cookie *cookiejar.Jar
-    Config *_Config
+	Config *_Config
 )
 
 func initCookie() error {
@@ -48,17 +48,17 @@ func (i XUI) Load() error {
 	fmt.Println("Cookie has been initilized")
 
 	Config = newConfig()
-    if err = Config.Load(); err != nil {
-        fmt.Println("Failed to initilize XUI config: '%v'", err)
-        return err
-    }
+	if err = Config.Load(); err != nil {
+		fmt.Println("Failed to initilize XUI config: '%v'", err)
+		return err
+	}
 	fmt.Println("XUI config has been initilized")
-    var confJson []byte
+	var confJson []byte
 	if confJson, err = json.Marshal(Config); err != nil {
 		log.Printf("Couldn't marshal xui config js: %v", err)
 		return err
 	}
-    fmt.Println(fmt.Printf("Main config IP: '%s'", Config.ServerConfigList[0].Host()))
+	fmt.Println(fmt.Printf("Main config IP: '%s'", Config.ServerConfigList[0].Host()))
 	fmt.Printf("XUI config: '%s'", string(confJson))
 
 	fmt.Println("XUI module has been loaded")

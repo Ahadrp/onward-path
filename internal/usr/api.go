@@ -124,6 +124,7 @@ func BuyConfig(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Login of user '%s' failed: '%v'", email, err)
 		return
 	}
+	addClientParam.Email = email
 
 	var _client json.RawMessage
 	if _client, err = xui.GetClient(email); err != nil {
@@ -138,7 +139,9 @@ func BuyConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if client.Email == "" {
-        buyConfig(&addClientParam)
+		if err := buyConfig(&addClientParam); err != nil {
+			log.Printf("Failed to buy account for user '%s': %v", email, err)
+		}
 		log.Printf("Account for '%s' has been created!", email)
 	} else {
 		log.Printf("User '%s' has already an account!", client.Email)

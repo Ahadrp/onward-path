@@ -7,7 +7,7 @@ import (
 const (
 	CONFIG_PATH  = "/etc/onward-path/onward-path.conf"
 	MYSQL_CONFIG = "/etc/onward-path/mysql.conf"
-	XUI_CONFIG = "/etc/onward-path/xui.conf"
+	XUI_CONFIG   = "/etc/onward-path/xui.conf"
 )
 
 var ()

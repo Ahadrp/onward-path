@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"onward-path/internal/ipc"
+	"strconv"
 )
 
 var (
@@ -44,6 +45,44 @@ func Login(username string, password string) error {
 	return nil
 }
 
+func LoginWithServerID(serverID int) error {
+	if len(Config.ServerConfigList) == 0 {
+		log.Printf("No server has been defined")
+		return fmt.Errorf("Sorry! No server is available now!")
+	}
+
+	for _, serverConfig := range Config.ServerConfigList {
+		if serverConfig.id == strconv.Itoa(serverID) {
+			if err := initCookie(); err != nil {
+				log.Println("Login failed because: '%v'", err)
+				return err
+			}
+
+			params := map[string]string{
+				"username": serverConfig.adminUser,
+				"password": serverConfig.adminPass,
+			}
+			url := fmt.Sprintf(
+				"%s:%d/%slogin/",
+				serverConfig.host,
+				serverConfig.port,
+				serverConfig.uriPath)
+
+			result, err := ipc.PostLogin(url, params, Cookie)
+
+			if err != nil {
+				log.Printf("Login of user '%s' failed: '%s'", serverConfig.adminUser, err)
+				clearCookie()
+				return err
+			}
+			log.Printf("Login of user '%s' was successful! | output: '%s'", serverConfig.adminUser, result)
+			return nil
+		}
+	}
+
+	return fmt.Errorf("No such server: '%d'", serverID)
+}
+
 func AddClient(w http.ResponseWriter, r *http.Request) {
 	if err := Login(ADMIN_USERNAME, ADMIN_PASSWD); err != nil {
 		log.Printf("Login of user '%s' failed: '%s'", ADMIN_USERNAME, err)
@@ -53,13 +92,17 @@ func AddClient(w http.ResponseWriter, r *http.Request) {
 	addClient(w, r)
 }
 
-func AddClientInternal(addClientRequestExternalAPI AddClientRequestExternalAPI) {
-	if err := Login(ADMIN_USERNAME, ADMIN_PASSWD); err != nil {
-		log.Printf("Login of user '%s' failed: '%s'", ADMIN_USERNAME, err)
-		return
+func AddClientInternal(addClientRequestExternalAPI AddClientRequestExternalAPI) error {
+	if err := LoginWithServerID(addClientRequestExternalAPI.Server); err != nil {
+		log.Printf("Login of admin failed: '%v'", err)
+		return fmt.Errorf("Admin login failed")
 	}
 
-	addClient_Internal(addClientRequestExternalAPI)
+	if err := addClient_Internal(addClientRequestExternalAPI); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func GetClient(email string) (json.RawMessage, error) {
@@ -158,14 +201,19 @@ func addClient(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func addClient_Internal(addClientRequestExternalAPI AddClientRequestExternalAPI) {
-	url := fmt.Sprintf("%s:%d/%s%saddClient/", HOST, PORT, URI_PATH, BASE_ENDPOINT)
+func addClient_Internal(addClientRequestExternalAPI AddClientRequestExternalAPI) error {
+	url, err := createURL(addClientRequestExternalAPI.Server)
+	if err != nil {
+		log.Printf("Failed to create URL: '%v'", err)
+		return err
+	}
 
 	addClientRequestExternalAPI.Settings.Clients[0].ID = uuid.New().String()
 
 	internalClientJson, err := json.Marshal(addClientRequestExternalAPI.Settings)
 	if err != nil {
 		log.Printf("json client error")
+		return err
 	}
 
 	addClientRequestInternalAPI := AddClientRequestInternalAPI{
@@ -184,14 +232,47 @@ func addClient_Internal(addClientRequestExternalAPI AddClientRequestExternalAPI)
 	criaJson, err := json.Marshal(addClientRequestInternalAPI)
 	if err != nil {
 		log.Printf("json error")
-		return
+		return err
 	}
 
 	result, err := ipc.Post(url, string(criaJson), Cookie)
 	if err != nil {
-		log.Printf("Failed to convert client to json: ", err)
-		return
+		log.Printf("Failed to convert client to json: '%v'", err)
+		return err
 	}
-	log.Printf("Client '%s' was added successfully! | output: '%s'", addClientRequestExternalAPI.Settings.Clients[0].Email, result)
 
+	var xuiResp XUIResponse
+	err = json.Unmarshal([]byte(result), &xuiResp)
+	if err != nil {
+		log.Printf("Couldn't parse xui response: '%v'", err)
+		return err
+	}
+
+	if xuiResp.Success {
+		log.Printf("Client '%s' was added successfully! | output: '%s'", addClientRequestExternalAPI.Settings.Clients[0].Email, result)
+		return nil
+	} else {
+		log.Printf("Failed to add client '%s' | output: '%s'", addClientRequestExternalAPI.Settings.Clients[0].Email, result)
+		return fmt.Errorf(xuiResp.Message)
+	}
+}
+
+func createURL(serverID int) (string, error) {
+	if len(Config.ServerConfigList) == 0 {
+		log.Printf("No server has been defined")
+		return "", fmt.Errorf("Sorry! No server is available now!")
+	}
+
+	for _, serverConfig := range Config.ServerConfigList {
+		if serverConfig.id == strconv.Itoa(serverID) {
+			return fmt.Sprintf(
+				"%s:%d/%s%saddClient/",
+				serverConfig.host,
+				serverConfig.port,
+				serverConfig.uriPath,
+				serverConfig.baseEndpoint), nil
+		}
+	}
+
+	return "", fmt.Errorf("No server with id '%d'!", serverID)
 }

@@ -42,7 +42,7 @@ type XUIResponse struct {
 }
 
 type GetClientResponse struct {
-    Client
+	Client
 }
 
 type Client struct {
