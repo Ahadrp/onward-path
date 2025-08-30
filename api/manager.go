@@ -41,11 +41,11 @@ func (i API) loadAPIs() {
 	})
 
 	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-		usr.Login(w, r)
+		usr.LoginHandler(w, r)
 	})
 
 	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
-		usr.Register(w, r)
+		usr.RegisterHandler(w, r)
 	})
 
 	http.HandleFunc("/TestUserExistance", func(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +53,7 @@ func (i API) loadAPIs() {
 	})
 
 	http.HandleFunc("/BuyConfig", func(w http.ResponseWriter, r *http.Request) {
-		usr.BuyConfig(w, r)
+		usr.BuyConfigHandler(w, r)
 	})
 
 	log.Println("API apis has been loaded")

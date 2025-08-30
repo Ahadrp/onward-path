@@ -1,5 +1,9 @@
 package usr
 
+import (
+	"onward-path/internal/xui"
+)
+
 type LoginParam struct {
 	Email  string `json:"email"`
 	Passwd string `json:"passwd"`
@@ -11,4 +15,8 @@ type AddClientParam struct {
 	Flow       string `json:"flow"`
 	Total      int    `json:"total"`
 	Email      string `json:"email"`
+}
+
+type UsrResponseAPI struct {
+	xui.XUIResponse
 }
