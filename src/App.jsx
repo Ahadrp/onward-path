@@ -1,3 +1,4 @@
+import PrivateRoute from "./PrivateRoute";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 
@@ -27,7 +28,7 @@ function Register() {
     setMessage("");
 
     try {
-      const res = await fetch("http://192.168.109.100:2332/register", {
+      const res = await fetch("/api/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -79,7 +80,7 @@ function Register() {
 
 // Login Page
 function Login() {
-  const [email, setEmail] = useState("");
+const [email, setEmail] = useState("");
   const [passwd, setPasswd] = useState("");
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
@@ -89,13 +90,14 @@ function Login() {
     setMessage("");
 
     try {
-      const res = await fetch("http://192.168.109.100:2332/login", {
+      const res = await fetch("/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Accept": "application/json",
         },
         body: JSON.stringify({ email, passwd }),
+        credentials: "include", // <-- Important!
       });
 
       if (res.ok) {
@@ -150,7 +152,14 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/profile" element={<Profile />} />
+      <Route
+        path="/profile"
+        element={
+          <PrivateRoute>
+            <Profile />
+          </PrivateRoute>
+        }
+      />
     </Routes>
   );
 }
