@@ -97,7 +97,8 @@ func Login(w http.ResponseWriter, r *http.Request) (string, error) {
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,  // JS cannot read it
-		Secure:   false, // set to true if HTTPS
+        SameSite: http.SameSiteLaxMode,
+        Secure:   false, // required with None
 	})
 
 	log.Printf("Login of user '%s' was successful!", loginParam.Email)
@@ -118,6 +119,7 @@ func BuyConfig(w http.ResponseWriter, r *http.Request) (string, error) {
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		errText := fmt.Sprintf("Missing session token")
+		log.Print(errText)
 		// http.Error(w, "Missing session token", http.StatusUnauthorized)
 		return "", fmt.Errorf(errText)
 	}
@@ -334,3 +336,71 @@ func buyConfig(addClientParam *AddClientParam) error {
 
 	return nil
 }
+
+func AuthenticateCheck(w http.ResponseWriter, r *http.Request) (string, error) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		errTxt := "Method Not Allowed"
+		log.Printf("HTTP %d - %s", http.StatusMethodNotAllowed, errTxt)
+		// http.Error(w, errTxt, http.StatusMethodNotAllowed)
+		return "", fmt.Errorf("HTTP %d - %s", http.StatusMethodNotAllowed, errTxt)
+	}
+
+	cookie, err := r.Cookie(SESSION_NAME)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		errText := fmt.Sprintf("Missing session token")
+		// http.Error(w, "Missing session token", http.StatusUnauthorized)
+		log.Printf(errText)
+		return "", fmt.Errorf(errText)
+	}
+	token := cookie.Value
+
+    exist, err := checkSessionExistance(token)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		errText := fmt.Sprintf("Error in finding token '%s': '%v'", token, err)
+		log.Println(errText)
+		return "", fmt.Errorf(errText)
+	}
+
+    if exist {
+        w.WriteHeader(http.StatusOK)
+        log.Printf("Token '%s' is valid!", token)
+        return "", nil
+    } else {
+        w.WriteHeader(http.StatusUnauthorized)
+		errText := fmt.Sprintf("No suck a token: '%s'", token)
+        log.Printf(errText)
+        return "", fmt.Errorf(errText)
+    }
+}
+
+func checkSessionExistance(token string) (bool, error) {
+	if Mysql == nil {
+		err := "Mysql obj hasn't been initilized!"
+		log.Printf(err)
+		return false, fmt.Errorf(err)
+	}
+
+	// query to db for finding user
+	query := fmt.Sprintf("SELECT token FROM %s WHERE token=?", SESSION_TABLE)
+	_token := ""
+
+	if err := Mysql.SendQuery(query, func(db *sql.DB) error {
+		err := db.QueryRow(query, token).Scan(&_token)
+		return err
+	}); err != nil {
+        if err == sql.ErrNoRows {
+            // Not found
+            log.Printf("Token not found: '%s'", token)
+            return false, nil
+        }
+        // Some other DB error
+		log.Printf("Couldn't send query to db: '%v'", err)
+        return false, err
+	}
+
+	return true, nil
+}
+

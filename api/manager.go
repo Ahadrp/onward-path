@@ -40,7 +40,7 @@ func (i API) loadAPIs() {
 		xui.AddClient(w, r)
 	})
 
-	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/login", func(w http.ResponseWriter, r *http.Request) {
 		usr.LoginHandler(w, r)
 	})
 
@@ -54,6 +54,10 @@ func (i API) loadAPIs() {
 
 	http.HandleFunc("/BuyConfig", func(w http.ResponseWriter, r *http.Request) {
 		usr.BuyConfigHandler(w, r)
+	})
+
+	http.HandleFunc("/api/Auth-check", func(w http.ResponseWriter, r *http.Request) {
+		usr.AuthenticateCheckHandler(w, r)
 	})
 
 	log.Println("API apis has been loaded")
