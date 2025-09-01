@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 
 	"onward-path/internal/xui"
 )
@@ -103,7 +104,7 @@ func Login(w http.ResponseWriter, r *http.Request) (string, error) {
 
 	log.Printf("Login of user '%s' was successful!", loginParam.Email)
 
-	return "", nil
+	return token, nil
 }
 
 func BuyConfig(w http.ResponseWriter, r *http.Request) (string, error) {
@@ -115,16 +116,16 @@ func BuyConfig(w http.ResponseWriter, r *http.Request) (string, error) {
 		return "", fmt.Errorf("HTTP %d - %s", http.StatusMethodNotAllowed, errTxt)
 	}
 
-	cookie, err := r.Cookie(SESSION_NAME)
-	if err != nil {
+    authHeader := r.Header.Get("Authorization")
+    if ! strings.HasPrefix(authHeader, "Bearer ") {
+        // No valid token...
 		w.WriteHeader(http.StatusUnauthorized)
 		errText := fmt.Sprintf("Missing session token")
-		log.Print(errText)
 		// http.Error(w, "Missing session token", http.StatusUnauthorized)
+		log.Printf(errText)
 		return "", fmt.Errorf(errText)
-	}
-
-	token := cookie.Value
+    }
+    token := strings.TrimPrefix(authHeader, "Bearer ")
 
 	// Set response header
 	// w.Header().Set("Content-Type", "application/json")
@@ -346,15 +347,16 @@ func AuthenticateCheck(w http.ResponseWriter, r *http.Request) (string, error) {
 		return "", fmt.Errorf("HTTP %d - %s", http.StatusMethodNotAllowed, errTxt)
 	}
 
-	cookie, err := r.Cookie(SESSION_NAME)
-	if err != nil {
+    authHeader := r.Header.Get("Authorization")
+    if ! strings.HasPrefix(authHeader, "Bearer ") {
+        // No valid token...
 		w.WriteHeader(http.StatusUnauthorized)
 		errText := fmt.Sprintf("Missing session token")
 		// http.Error(w, "Missing session token", http.StatusUnauthorized)
 		log.Printf(errText)
 		return "", fmt.Errorf(errText)
-	}
-	token := cookie.Value
+    }
+    token := strings.TrimPrefix(authHeader, "Bearer ")
 
     exist, err := checkSessionExistance(token)
 	if err != nil {
