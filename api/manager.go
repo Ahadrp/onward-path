@@ -44,7 +44,7 @@ func (i API) loadAPIs() {
 		usr.LoginHandler(w, r)
 	})
 
-	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/register", func(w http.ResponseWriter, r *http.Request) {
 		usr.RegisterHandler(w, r)
 	})
 
@@ -52,7 +52,7 @@ func (i API) loadAPIs() {
 		usr.TestUserExistance(w, r)
 	})
 
-	http.HandleFunc("/BuyConfig", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/BuyConfig", func(w http.ResponseWriter, r *http.Request) {
 		usr.BuyConfigHandler(w, r)
 	})
 

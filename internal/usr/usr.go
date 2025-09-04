@@ -171,9 +171,8 @@ func BuyConfig(w http.ResponseWriter, r *http.Request) (string, error) {
 			log.Println(errText)
 			return "", fmt.Errorf(errText)
 		}
-		errText := fmt.Sprintf("Account for '%s' has been created!", email)
-		log.Println(errText)
-		return "", fmt.Errorf(errText)
+		log.Printf("Account for '%s' has been created!", email)
+		return "", nil
 	} else {
 		errText := fmt.Sprintf("User '%s' has already an account!", client.Email)
 		log.Println(errText)
