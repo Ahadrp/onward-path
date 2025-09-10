@@ -122,3 +122,33 @@ func AuthenticateCheckHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
+
+func GetCurrentConfigHandler(w http.ResponseWriter, r *http.Request) {
+	// Set response header
+	w.Header().Set("Content-Type", "application/json")
+	// Handle CORS preflight
+	// w.Header().Set("Access-Control-Allow-Origin", "http://192.168.109.100:5173")
+	// w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+	// w.Header().Set("Access-Control-Allow-Credentials", "true")
+	// w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept")
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	var resp UsrResponseAPI
+	result, err := GetCurrentConfig(w, r)
+	if err != nil {
+		resp.Success = false
+		resp.Message = err.Error()
+	} else {
+		resp.Success = true
+		resp.Message = "Fetching user configs was successful!"
+		resp.Obj = json.RawMessage([]byte(result))
+	}
+
+	// Encode struct as JSON and write directly to w
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}

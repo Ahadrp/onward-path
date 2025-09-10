@@ -60,5 +60,9 @@ func (i API) loadAPIs() {
 		usr.AuthenticateCheckHandler(w, r)
 	})
 
+	http.HandleFunc("/api/Get-user-configs", func(w http.ResponseWriter, r *http.Request) {
+		usr.GetCurrentConfigHandler(w, r)
+	})
+
 	log.Println("API apis has been loaded")
 }

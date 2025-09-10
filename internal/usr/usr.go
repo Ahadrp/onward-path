@@ -225,14 +225,14 @@ func GetCurrentConfig(w http.ResponseWriter, r *http.Request) (string, error) {
 		return "", fmt.Errorf(errText)
 	}
 
-    if len(clientConfigList) <= 0 {
+	if len(clientConfigList.CurrentConfigs) <= 0 {
 		errText := fmt.Sprintf("User '%s' has no config!", email)
 		log.Println(errText)
 		return "", fmt.Errorf(errText)
-    } else {
+	} else {
 		log.Printf("Configs of user '%s' has been found successfully!", email)
-        return string([]byte(clientConfigsRaw)), nil
-    }
+		return string([]byte(clientConfigsRaw)), nil
+	}
 }
 
 func addUser(loginParam LoginParam) error {

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"onward-path/internal/ipc"
 	"strconv"
+	"strings"
 )
 
 var (
@@ -295,97 +296,115 @@ func createURL(serverID int) (string, error) {
 	return "", fmt.Errorf("No server with id '%d'!", serverID)
 }
 
-serverConf.idfunc getClientWithServer(email string, serverConf *serverConfig, currentConfigList *CurrentConfigList) error {
+func getClientWithServer(email string, serverConf *serverConfig, currentConfigList *CurrentConfigList) error {
 
-    serverID, err := strconv.Atoi(serverConf.id) // string -> int
-    if err != nil {
-        fmt.Println("convert error:", err)
-        return err
-    }
+	serverID, err := strconv.Atoi(serverConf.id) // string -> int
+	if err != nil {
+		fmt.Println("convert error:", err)
+		return err
+	}
 
 	if err := LoginWithServerID(serverID); err != nil {
 		log.Printf("Admin login to server '%s' was failed: '%v'", err)
 		return err
 	}
 
-    var client GetClientResponse
-    if err := getClientWithServerConfig(email, serverConf, client); err != nil {
+	var client GetClientResponse
+	if err := getClientWithServerConfig(email, serverConf, &client); err != nil {
 		log.Printf("Couldn't get client with email '%s' from server '%s': '%v'",
-        email, serverConf.host, err)
-		return err
-    }
-
-	endPoint := "get/"
-	url := fmt.Sprintf("%s:%d/%s%s%s", serverConf.host, serverConf.port,
-		serverConf.uriPath, serverConf.baseEndpoint, endPoint)
-
-	result, err := ipc.Get(url, serverConf.id, Cookie)
-	if err != nil {
-		log.Printf("Sending Get request failed: '%v'", err)
-		return err
-	}
-	// TODO: rm later
-	log.Printf(result)
-
-	var xuiResp XUIResponse
-	err = json.Unmarshal([]byte(result), &xuiResp)
-	if err != nil {
-		log.Printf("Couldn't parse xui response: '%v'", err)
-		return err
-	}
-
-	if xuiResp.Obj == nil {
-		log.Printf("There is no inbound in server '%s' with id '%s'", serverConf.host,
-			serverConf.id)
+			email, serverConf.host, err)
 		return err
 	}
 
 	var inbound Inbound
-	err = json.Unmarshal(xuiResp.Obj, &inbound)
-	if err != nil {
-		log.Printf("Couldn't parse inbound response: '%v'", err)
+	if err := getInbound(serverConf, &inbound); err != nil {
+		log.Printf("Couldn't get inbound of server '%s': '%v'", serverConf.host, err)
 		return err
 	}
 
-	for _, _client := range inbound.Settings.Clients {
-		if _client.Email != email {
-			continue
-		}
-
-        serverID, err := strconv.Atoi(serverConf.id) // string -> int
-        if err != nil {
-            fmt.Println("convert error:", err)
-            return err
-        }
-
-		// There's an account here.
-		currentConfig := CurrentConfig{
-			Inbound: Inbound{
-				IP:                              inbound.IP,
-				Port:                            inbound.Port,
-				Protocol:                        inbound.Protocol,
-                StreamSettings: StreamSettings{
-                    Network: inbound.StreamSettings.Network,
-                    Security: inbound.StreamSettings.Security,
-                },
-			},
-			ClientConfig: Client{
-				ID:     _client.ID,
-				Email:  _client.Email,
-				Expiry: _client.Expiry,
-				Up:     _client.Up,
-				Down:   _client.Down,
-				Total:  _client.Total,
-			},
-		}
-		currentConfigList = append(currentConfigList, currentConfig)
-		break
+	currentConfig := CurrentConfig{
+		Inbound:      inbound,
+		ClientConfig: client.Client,
 	}
+
+	currentConfigList.CurrentConfigs = append(currentConfigList.CurrentConfigs, currentConfig)
+
+	return nil
+
+	/*
+		endPoint := "get/"
+		url := fmt.Sprintf("%s:%d/%s%s%s", serverConf.host, serverConf.port,
+			serverConf.uriPath, serverConf.baseEndpoint, endPoint)
+
+		result, err := ipc.Get(url, serverConf.id, Cookie)
+		if err != nil {
+			log.Printf("Sending Get request failed: '%v'", err)
+			return err
+		}
+		// TODO: rm later
+		log.Printf(result)
+
+		var xuiResp XUIResponse
+		err = json.Unmarshal([]byte(result), &xuiResp)
+		if err != nil {
+			log.Printf("Couldn't parse xui response: '%v'", err)
+			return err
+		}
+
+		if xuiResp.Obj == nil {
+			log.Printf("There is no inbound in server '%s' with id '%s'", serverConf.host,
+				serverConf.id)
+			return err
+		}
+
+		var inbound Inbound
+		err = json.Unmarshal(xuiResp.Obj, &inbound)
+		if err != nil {
+			log.Printf("Couldn't parse inbound response: '%v'", err)
+			return err
+		}
+
+		for _, _client := range inbound.Settings.Clients {
+			if _client.Email != email {
+				continue
+			}
+
+	        serverID, err := strconv.Atoi(serverConf.id) // string -> int
+	        if err != nil {
+	            fmt.Println("convert error:", err)
+	            return err
+	        }
+
+			// There's an account here.
+			currentConfig := CurrentConfig{
+				Inbound: Inbound{
+					IP:                              inbound.IP,
+					Port:                            inbound.Port,
+					Protocol:                        inbound.Protocol,
+	                StreamSettings: StreamSettings{
+	                    Network: inbound.StreamSettings.Network,
+	                    Security: inbound.StreamSettings.Security,
+	                },
+				},
+				ClientConfig: Client{
+					ID:     _client.ID,
+					Email:  _client.Email,
+					Expiry: _client.Expiry,
+					Up:     _client.Up,
+					Down:   _client.Down,
+					Total:  _client.Total,
+				},
+			}
+			currentConfigList = append(currentConfigList, currentConfig)
+			break
+		}
+
+	*/
 
 	return nil
 }
 
-func getClientWithServerConfig(email string, server *serverConfig, clientConfig *GetClientResponse) error {
+func getClientWithServerConfig(email string, serverConf *serverConfig, clientConfig *GetClientResponse) error {
 	endPoint := "getClientTraffics/"
 	url := fmt.Sprintf("%s:%d/%s%s%s", serverConf.host, serverConf.port,
 		serverConf.uriPath, serverConf.baseEndpoint, endPoint)
@@ -404,28 +423,28 @@ func getClientWithServerConfig(email string, server *serverConfig, clientConfig 
 		return err
 	}
 
-    // TODO: bug?
-    if string([]byte(xuiResp.Obj)) == "null" { // no client with the email in this server
-         errText:= fmt.Sprintf("No User with email '%s' in server '%s'", email, serverConf.host)
+	// TODO: bug?
+	if string([]byte(xuiResp.Obj)) == "null" { // no client with the email in this server
+		errText := fmt.Sprintf("No User with email '%s' in server '%s'", email, serverConf.host)
 		log.Println(errText)
 		return fmt.Errorf(errText)
-    }
+	}
 
 	err = json.Unmarshal([]byte(xuiResp.Obj), &clientConfig)
 	if err != nil {
 		log.Printf("Couldn't parse get client response: '%v'", err)
-		return json.RawMessage{}, err
+		return err
 	}
 
-    return nil
+	return nil
 }
 
-func getInbound(server *serverConfig, inbound *Inbound) error {
+func getInbound(serverConf *serverConfig, inbound *Inbound) error {
 	endPoint := "get/"
 	url := fmt.Sprintf("%s:%d/%s%s%s", serverConf.host, serverConf.port,
 		serverConf.uriPath, serverConf.baseEndpoint, endPoint)
 
-	result, err := ipc.Get(url, server.id, Cookie)
+	result, err := ipc.Get(url, serverConf.id, Cookie)
 	if err != nil {
 		log.Printf("Sending Get request failed: '%v'", err)
 		return err
@@ -439,18 +458,26 @@ func getInbound(server *serverConfig, inbound *Inbound) error {
 		return err
 	}
 
-    // TODO: bug?
-    if string([]byte(xuiResp.Obj)) == "null" { // no client with the email in this server
-         errText:= fmt.Sprintf("No User with email '%s' in server '%s'", email, serverConf.host)
+	// TODO: bug?
+	if string([]byte(xuiResp.Obj)) == "null" { // no client with the email in this server
+		errText := fmt.Sprintf("No inbound  with id '%s' in server '%s'", serverConf.id, serverConf.host)
 		log.Println(errText)
 		return fmt.Errorf(errText)
-    }
-
-	err = json.Unmarshal([]byte(xuiResp.Obj), inbound)
-	if err != nil {
-		log.Printf("Couldn't parse get inbound response: '%v'", err)
-		return json.RawMessage{}, err
 	}
 
-    return nil
+	resultByte := []byte(xuiResp.Obj)
+	cleanResult := strings.ReplaceAll(string(resultByte), "\\n", "")
+	cleanResult = strings.ReplaceAll(cleanResult, "\\", "")
+	cleanResult = strings.ReplaceAll(cleanResult, "\"{", "{")
+	cleanResult = strings.ReplaceAll(cleanResult, "}\"", "}")
+
+	log.Printf(cleanResult)
+
+	err = json.Unmarshal([]byte(cleanResult), inbound)
+	if err != nil {
+		log.Printf("Couldn't parse get inbound response: '%v'", err)
+		return err
+	}
+
+	return nil
 }
