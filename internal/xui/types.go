@@ -56,3 +56,35 @@ type Client struct {
 	Total     int    `json:"total"`
 	Reset     int    `json:"reset"`
 }
+
+type Inbound struct {
+	ID             int             `json:"id"`
+	Up             int             `json:"up"`
+	Down           int             `json:"down"`
+	Total          int             `json:"total"`
+	Remark         string          `json:"remark"`
+	Enable         bool            `json:"enable"`
+	ExpiryTime     int64           `json:"expiryTime"`
+	ClientStats    interface{}     `json:"clientStats"` // can refine if you know its structure
+	Listen         string          `json:"listen"`
+	IP             string          `json:"ip"`
+	Port           int             `json:"port"`
+	Protocol       string          `json:"protocol"`
+	Settings       SettingsDecoded `json:"settings"`
+	StreamSettings StreamSettings  `json:"streamSettings"`
+}
+
+// nested "streamSettings"
+type StreamSettings struct {
+	Network  string `json:"network"`
+	Security string `json:"security"`
+}
+
+type CurrentConfigList struct {
+	CurrentConfigs []CurrentConfig `json:"current_config_list"`
+}
+
+type CurrentConfig struct {
+	Inbound      Inbound `json:"inbound"`
+	ClientConfig Client  `json:"client_config"`
+}

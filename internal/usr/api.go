@@ -8,15 +8,15 @@ import (
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	// Set response header
 	w.Header().Set("Content-Type", "application/json")
-    // Handle CORS preflight
-    w.Header().Set("Access-Control-Allow-Origin", "http://192.168.109.100:5173")
-    w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-    w.Header().Set("Access-Control-Allow-Credentials", "true")
-    w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept")
-    if r.Method == "OPTIONS" {
-        w.WriteHeader(http.StatusOK)
-        return
-    }
+	// Handle CORS preflight
+	w.Header().Set("Access-Control-Allow-Origin", "http://192.168.109.100:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept")
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 
 	var resp UsrResponseAPI
 	_, err := Register(w, r)
@@ -37,15 +37,15 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	// Set response header
 	w.Header().Set("Content-Type", "application/json")
-    // Handle CORS preflight
-    // w.Header().Set("Access-Control-Allow-Origin", "http://192.168.109.100:5173")
-    // w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-    // w.Header().Set("Access-Control-Allow-Credentials", "true")
-    // w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept")
-    if r.Method == "OPTIONS" {
-        w.WriteHeader(http.StatusOK)
-        return
-    }
+	// Handle CORS preflight
+	// w.Header().Set("Access-Control-Allow-Origin", "http://192.168.109.100:5173")
+	// w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+	// w.Header().Set("Access-Control-Allow-Credentials", "true")
+	// w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept")
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 
 	var resp UsrResponseAPI
 	token, err := Login(w, r)
@@ -55,7 +55,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		resp.Success = true
 		resp.Message = "Login has been successful!"
-        token = "\"" + token + "\""
+		token = "\"" + token + "\""
 		resp.Obj = json.RawMessage(token)
 	}
 
@@ -68,15 +68,15 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 func BuyConfigHandler(w http.ResponseWriter, r *http.Request) {
 	// Set response header
 	w.Header().Set("Content-Type", "application/json")
-    // Handle CORS preflight
-    w.Header().Set("Access-Control-Allow-Origin", "http://192.168.109.100:5173")
-    w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-    w.Header().Set("Access-Control-Allow-Credentials", "true")
-    w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept")
-    if r.Method == "OPTIONS" {
-        w.WriteHeader(http.StatusOK)
-        return
-    }
+	// Handle CORS preflight
+	w.Header().Set("Access-Control-Allow-Origin", "http://192.168.109.100:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept")
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 
 	var resp UsrResponseAPI
 	_, err := BuyConfig(w, r)
@@ -97,15 +97,15 @@ func BuyConfigHandler(w http.ResponseWriter, r *http.Request) {
 func AuthenticateCheckHandler(w http.ResponseWriter, r *http.Request) {
 	// Set response header
 	w.Header().Set("Content-Type", "application/json")
-    // Handle CORS preflight
-    // w.Header().Set("Access-Control-Allow-Origin", "http://192.168.109.100:5173")
-    // w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-    // w.Header().Set("Access-Control-Allow-Credentials", "true")
-    // w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept")
-    if r.Method == "OPTIONS" {
-        w.WriteHeader(http.StatusOK)
-        return
-    }
+	// Handle CORS preflight
+	// w.Header().Set("Access-Control-Allow-Origin", "http://192.168.109.100:5173")
+	// w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+	// w.Header().Set("Access-Control-Allow-Credentials", "true")
+	// w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept")
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 
 	var resp UsrResponseAPI
 	_, err := AuthenticateCheck(w, r)

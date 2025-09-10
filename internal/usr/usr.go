@@ -97,9 +97,9 @@ func Login(w http.ResponseWriter, r *http.Request) (string, error) {
 		Name:     SESSION_NAME,
 		Value:    token,
 		Path:     "/",
-		HttpOnly: true,  // JS cannot read it
-        SameSite: http.SameSiteLaxMode,
-        Secure:   false, // required with None
+		HttpOnly: true, // JS cannot read it
+		SameSite: http.SameSiteLaxMode,
+		Secure:   false, // required with None
 	})
 
 	log.Printf("Login of user '%s' was successful!", loginParam.Email)
@@ -116,16 +116,16 @@ func BuyConfig(w http.ResponseWriter, r *http.Request) (string, error) {
 		return "", fmt.Errorf("HTTP %d - %s", http.StatusMethodNotAllowed, errTxt)
 	}
 
-    authHeader := r.Header.Get("Authorization")
-    if ! strings.HasPrefix(authHeader, "Bearer ") {
-        // No valid token...
+	authHeader := r.Header.Get("Authorization")
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		// No valid token...
 		w.WriteHeader(http.StatusUnauthorized)
 		errText := fmt.Sprintf("Missing session token")
 		// http.Error(w, "Missing session token", http.StatusUnauthorized)
 		log.Printf(errText)
 		return "", fmt.Errorf(errText)
-    }
-    token := strings.TrimPrefix(authHeader, "Bearer ")
+	}
+	token := strings.TrimPrefix(authHeader, "Bearer ")
 
 	// Set response header
 	// w.Header().Set("Content-Type", "application/json")
@@ -178,6 +178,61 @@ func BuyConfig(w http.ResponseWriter, r *http.Request) (string, error) {
 		log.Println(errText)
 		return "", fmt.Errorf(errText)
 	}
+}
+
+func GetCurrentConfig(w http.ResponseWriter, r *http.Request) (string, error) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		errTxt := "Method Not Allowed"
+		log.Printf("HTTP %d - %s", http.StatusMethodNotAllowed, errTxt)
+		// http.Error(w, errTxt, http.StatusMethodNotAllowed)
+		return "", fmt.Errorf("HTTP %d - %s", http.StatusMethodNotAllowed, errTxt)
+	}
+
+	authHeader := r.Header.Get("Authorization")
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		// No valid token...
+		w.WriteHeader(http.StatusUnauthorized)
+		errText := fmt.Sprintf("Missing session token")
+		// http.Error(w, "Missing session token", http.StatusUnauthorized)
+		log.Printf(errText)
+		return "", fmt.Errorf(errText)
+	}
+	token := strings.TrimPrefix(authHeader, "Bearer ")
+
+	// Set response header
+	// w.Header().Set("Content-Type", "application/json")
+
+	email, err := findUserByToken(token)
+	if err != nil {
+		errText := fmt.Sprintf("Couldn't find any user with token '%s': ", token, err)
+		log.Println(errText)
+		return "", fmt.Errorf(errText)
+	}
+
+	var clientConfigsRaw json.RawMessage
+	if clientConfigsRaw, err = xui.GetUserConfigs(email); err != nil {
+		errText := fmt.Sprintf("Get configs of client '%s' failed: '%v'", email, err)
+		log.Println(errText)
+		return "", fmt.Errorf(errText)
+	}
+
+	var clientConfigList xui.CurrentConfigList
+	err = json.Unmarshal(clientConfigsRaw, &clientConfigList)
+	if err != nil {
+		errText := fmt.Sprintf("Failed to process configs of client '%s' json: '%v'", email, err)
+		log.Println(errText)
+		return "", fmt.Errorf(errText)
+	}
+
+    if len(clientConfigList) <= 0 {
+		errText := fmt.Sprintf("User '%s' has no config!", email)
+		log.Println(errText)
+		return "", fmt.Errorf(errText)
+    } else {
+		log.Printf("Configs of user '%s' has been found successfully!", email)
+        return string([]byte(clientConfigsRaw)), nil
+    }
 }
 
 func addUser(loginParam LoginParam) error {
@@ -346,18 +401,18 @@ func AuthenticateCheck(w http.ResponseWriter, r *http.Request) (string, error) {
 		return "", fmt.Errorf("HTTP %d - %s", http.StatusMethodNotAllowed, errTxt)
 	}
 
-    authHeader := r.Header.Get("Authorization")
-    if ! strings.HasPrefix(authHeader, "Bearer ") {
-        // No valid token...
+	authHeader := r.Header.Get("Authorization")
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		// No valid token...
 		w.WriteHeader(http.StatusUnauthorized)
 		errText := fmt.Sprintf("Missing session token")
 		// http.Error(w, "Missing session token", http.StatusUnauthorized)
 		log.Printf(errText)
 		return "", fmt.Errorf(errText)
-    }
-    token := strings.TrimPrefix(authHeader, "Bearer ")
+	}
+	token := strings.TrimPrefix(authHeader, "Bearer ")
 
-    exist, err := checkSessionExistance(token)
+	exist, err := checkSessionExistance(token)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		errText := fmt.Sprintf("Error in finding token '%s': '%v'", token, err)
@@ -365,16 +420,16 @@ func AuthenticateCheck(w http.ResponseWriter, r *http.Request) (string, error) {
 		return "", fmt.Errorf(errText)
 	}
 
-    if exist {
-        w.WriteHeader(http.StatusOK)
-        log.Printf("Token '%s' is valid!", token)
-        return "", nil
-    } else {
-        w.WriteHeader(http.StatusUnauthorized)
+	if exist {
+		w.WriteHeader(http.StatusOK)
+		log.Printf("Token '%s' is valid!", token)
+		return "", nil
+	} else {
+		w.WriteHeader(http.StatusUnauthorized)
 		errText := fmt.Sprintf("No suck a token: '%s'", token)
-        log.Printf(errText)
-        return "", fmt.Errorf(errText)
-    }
+		log.Printf(errText)
+		return "", fmt.Errorf(errText)
+	}
 }
 
 func checkSessionExistance(token string) (bool, error) {
@@ -392,16 +447,15 @@ func checkSessionExistance(token string) (bool, error) {
 		err := db.QueryRow(query, token).Scan(&_token)
 		return err
 	}); err != nil {
-        if err == sql.ErrNoRows {
-            // Not found
-            log.Printf("Token not found: '%s'", token)
-            return false, nil
-        }
-        // Some other DB error
+		if err == sql.ErrNoRows {
+			// Not found
+			log.Printf("Token not found: '%s'", token)
+			return false, nil
+		}
+		// Some other DB error
 		log.Printf("Couldn't send query to db: '%v'", err)
-        return false, err
+		return false, err
 	}
 
 	return true, nil
 }
-
