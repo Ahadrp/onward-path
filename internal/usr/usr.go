@@ -181,7 +181,7 @@ func BuyConfig(w http.ResponseWriter, r *http.Request) (string, error) {
 }
 
 func GetCurrentConfig(w http.ResponseWriter, r *http.Request) (string, error) {
-	if r.Method != http.MethodPost {
+	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		errTxt := "Method Not Allowed"
 		log.Printf("HTTP %d - %s", http.StatusMethodNotAllowed, errTxt)

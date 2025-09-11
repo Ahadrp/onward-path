@@ -22,6 +22,7 @@ var (
 	ADMIN_PASSWD          = "123"
 )
 
+// TODO: rm it later. No need.
 func Login(username string, password string) error {
 	if err := initCookie(); err != nil {
 		log.Println("Login failed because: '%v'", err)
@@ -84,6 +85,7 @@ func LoginWithServerID(serverID int) error {
 	return fmt.Errorf("No such server: '%d'", serverID)
 }
 
+// TODO: rm later
 func AddClient(w http.ResponseWriter, r *http.Request) {
 	if err := Login(ADMIN_USERNAME, ADMIN_PASSWD); err != nil {
 		log.Printf("Login of user '%s' failed: '%s'", ADMIN_USERNAME, err)
@@ -106,6 +108,7 @@ func AddClientInternal(addClientRequestExternalAPI AddClientRequestExternalAPI) 
 	return nil
 }
 
+// TODO: rm it later.
 func GetClient(email string) (json.RawMessage, error) {
 	if err := Login(ADMIN_USERNAME, ADMIN_PASSWD); err != nil {
 		log.Printf("Login of user '%s' failed: '%s'", ADMIN_USERNAME, err)
@@ -140,6 +143,7 @@ func GetUserConfigs(email string) (json.RawMessage, error) {
 	return json.RawMessage(currentConfigListByte), nil
 }
 
+// TODO: rm it later.
 func getClient(email string) (json.RawMessage, error) {
 	endPoint := "getClientTraffics/"
 	url := fmt.Sprintf("%s:%d/%s%s%s", HOST, PORT, URI_PATH, BASE_ENDPOINT, endPoint)
@@ -161,6 +165,7 @@ func getClient(email string) (json.RawMessage, error) {
 	return xuiResp.Obj, nil
 }
 
+// TODO: rm later.
 func addClient(w http.ResponseWriter, r *http.Request) {
 	url := fmt.Sprintf("%s:%d/%s%saddClient/", HOST, PORT, URI_PATH, BASE_ENDPOINT)
 	// find user base on session. assume we've found it.
@@ -322,84 +327,19 @@ func getClientWithServer(email string, serverConf *serverConfig, currentConfigLi
 		return err
 	}
 
+    for _, cli := range inbound.Settings.Clients { // set uuid. To create URL
+        if cli.Email == client.Client.Email {
+            client.Client.UUID = cli.ID
+            break
+        }
+    }
+
 	currentConfig := CurrentConfig{
 		Inbound:      inbound,
 		ClientConfig: client.Client,
 	}
 
 	currentConfigList.CurrentConfigs = append(currentConfigList.CurrentConfigs, currentConfig)
-
-	return nil
-
-	/*
-		endPoint := "get/"
-		url := fmt.Sprintf("%s:%d/%s%s%s", serverConf.host, serverConf.port,
-			serverConf.uriPath, serverConf.baseEndpoint, endPoint)
-
-		result, err := ipc.Get(url, serverConf.id, Cookie)
-		if err != nil {
-			log.Printf("Sending Get request failed: '%v'", err)
-			return err
-		}
-		// TODO: rm later
-		log.Printf(result)
-
-		var xuiResp XUIResponse
-		err = json.Unmarshal([]byte(result), &xuiResp)
-		if err != nil {
-			log.Printf("Couldn't parse xui response: '%v'", err)
-			return err
-		}
-
-		if xuiResp.Obj == nil {
-			log.Printf("There is no inbound in server '%s' with id '%s'", serverConf.host,
-				serverConf.id)
-			return err
-		}
-
-		var inbound Inbound
-		err = json.Unmarshal(xuiResp.Obj, &inbound)
-		if err != nil {
-			log.Printf("Couldn't parse inbound response: '%v'", err)
-			return err
-		}
-
-		for _, _client := range inbound.Settings.Clients {
-			if _client.Email != email {
-				continue
-			}
-
-	        serverID, err := strconv.Atoi(serverConf.id) // string -> int
-	        if err != nil {
-	            fmt.Println("convert error:", err)
-	            return err
-	        }
-
-			// There's an account here.
-			currentConfig := CurrentConfig{
-				Inbound: Inbound{
-					IP:                              inbound.IP,
-					Port:                            inbound.Port,
-					Protocol:                        inbound.Protocol,
-	                StreamSettings: StreamSettings{
-	                    Network: inbound.StreamSettings.Network,
-	                    Security: inbound.StreamSettings.Security,
-	                },
-				},
-				ClientConfig: Client{
-					ID:     _client.ID,
-					Email:  _client.Email,
-					Expiry: _client.Expiry,
-					Up:     _client.Up,
-					Down:   _client.Down,
-					Total:  _client.Total,
-				},
-			}
-			currentConfigList = append(currentConfigList, currentConfig)
-			break
-		}
-
-	*/
 
 	return nil
 }
@@ -478,6 +418,7 @@ func getInbound(serverConf *serverConfig, inbound *Inbound) error {
 		log.Printf("Couldn't parse get inbound response: '%v'", err)
 		return err
 	}
+    inbound.IP = serverConf.host
 
 	return nil
 }
