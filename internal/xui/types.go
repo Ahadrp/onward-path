@@ -47,7 +47,7 @@ type GetClientResponse struct {
 
 type Client struct {
 	ID        int    `json:"id"`
-	UUID      string    `json:"uuid"`
+	UUID      string `json:"uuid"`
 	InboundID int    `json:"inboundId"`
 	Enable    bool   `json:"enable"`
 	Email     string `json:"email"`

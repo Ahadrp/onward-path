@@ -13,6 +13,7 @@ import (
 	"strings"
 )
 
+// TODO: no need, rm later.
 var (
 	HOST                  = "192.168.109.128"
 	PORT                  = 18496
@@ -109,20 +110,38 @@ func AddClientInternal(addClientRequestExternalAPI AddClientRequestExternalAPI) 
 }
 
 // TODO: rm it later.
-func GetClient(email string) (json.RawMessage, error) {
-	if err := Login(ADMIN_USERNAME, ADMIN_PASSWD); err != nil {
-		log.Printf("Login of user '%s' failed: '%s'", ADMIN_USERNAME, err)
-		return json.RawMessage{}, err
+func GetClient(email string, serverID int) (json.RawMessage, error) {
+	if err := LoginWithServerID(serverID); err != nil {
+		log.Printf("Login of admin failed: '%v'", err)
+		return json.RawMessage{}, fmt.Errorf("Admin login failed")
 	}
 
-	var _client json.RawMessage
-	var err error
-	if _client, err = getClient(email); err != nil {
-		log.Printf("Couldn't get user '%s': %v", email, err)
-		return json.RawMessage{}, err
+	serverIDString := strconv.Itoa(serverID) // int -> string
+	for _, server := range Config.ServerConfigList {
+		if server.id != serverIDString {
+			// This is not the requested server.
+			continue
+		}
+
+		var client GetClientResponse
+		if err := getClientWithServerConfig(email, &server, &client); err != nil {
+			log.Printf("Couldn't get client with email '%s' from server '%s': '%v'",
+				email, server.host, err)
+			return json.RawMessage{}, err
+		}
+
+		clientByte, err := json.Marshal(client)
+		if err != nil {
+			log.Printf("Couldn't convert user of '%s' to byte: '%v'",
+				email, err)
+			return json.RawMessage{}, err
+		}
+
+		return json.RawMessage(clientByte), nil
 	}
 
-	return _client, nil
+	errText := fmt.Sprintf("No server with id '%d'", serverID)
+	return json.RawMessage{}, fmt.Errorf(errText)
 }
 
 func GetUserConfigs(email string) (json.RawMessage, error) {
@@ -327,12 +346,12 @@ func getClientWithServer(email string, serverConf *serverConfig, currentConfigLi
 		return err
 	}
 
-    for _, cli := range inbound.Settings.Clients { // set uuid. To create URL
-        if cli.Email == client.Client.Email {
-            client.Client.UUID = cli.ID
-            break
-        }
-    }
+	for _, cli := range inbound.Settings.Clients { // set uuid. To create URL
+		if cli.Email == client.Client.Email {
+			client.Client.UUID = cli.ID
+			break
+		}
+	}
 
 	currentConfig := CurrentConfig{
 		Inbound:      inbound,
@@ -417,7 +436,7 @@ func getInbound(serverConf *serverConfig, inbound *Inbound) error {
 		log.Printf("Couldn't parse get inbound response: '%v'", err)
 		return err
 	}
-    inbound.IP = serverConf.host
+	inbound.IP = serverConf.host
 
 	return nil
 }

@@ -151,8 +151,8 @@ func BuyConfig(w http.ResponseWriter, r *http.Request) (string, error) {
 	addClientParam.Email = email
 
 	var _client json.RawMessage
-	if _client, err = xui.GetClient(email); err != nil {
-		errText := fmt.Sprintf("Get client '%s' failed: '%v'", email, err)
+	if _client, err = xui.GetClient(email, addClientParam.Server); err != nil {
+		errText := fmt.Sprintf("Get client '%s' from server '%d' failed: '%v'", email, addClientParam.Server, err)
 		log.Println(errText)
 		return "", fmt.Errorf(errText)
 	}
@@ -282,7 +282,7 @@ func addUser(loginParam LoginParam) error {
 		return fmt.Errorf(err)
 	}
 
-    hashedPasswd := SHA256(loginParam.Passwd)
+	hashedPasswd := SHA256(loginParam.Passwd)
 
 	query := fmt.Sprintf("INSERT INTO %s (email, password) VALUES (?, ?)", USER_TABLE)
 	if err := Mysql.SendQuery(query, func(db *sql.DB) error {
@@ -310,7 +310,7 @@ func findUser(loginParam LoginParam) error {
 	email := ""
 	passwd := ""
 
-    hashedPasswd := SHA256(loginParam.Passwd)
+	hashedPasswd := SHA256(loginParam.Passwd)
 
 	if err := Mysql.SendQuery(query, func(db *sql.DB) error {
 		err := db.QueryRow(query, loginParam.Email, hashedPasswd).Scan(&email, &passwd)
