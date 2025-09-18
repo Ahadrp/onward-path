@@ -235,6 +235,46 @@ func GetCurrentConfig(w http.ResponseWriter, r *http.Request) (string, error) {
 	}
 }
 
+func AuthenticateCheck(w http.ResponseWriter, r *http.Request) (string, error) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		errTxt := "Method Not Allowed"
+		log.Printf("HTTP %d - %s", http.StatusMethodNotAllowed, errTxt)
+		// http.Error(w, errTxt, http.StatusMethodNotAllowed)
+		return "", fmt.Errorf("HTTP %d - %s", http.StatusMethodNotAllowed, errTxt)
+	}
+
+	authHeader := r.Header.Get("Authorization")
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		// No valid token...
+		w.WriteHeader(http.StatusUnauthorized)
+		errText := fmt.Sprintf("Missing session token")
+		// http.Error(w, "Missing session token", http.StatusUnauthorized)
+		log.Printf(errText)
+		return "", fmt.Errorf(errText)
+	}
+	token := strings.TrimPrefix(authHeader, "Bearer ")
+
+	exist, err := checkSessionExistance(token)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		errText := fmt.Sprintf("Error in finding token '%s': '%v'", token, err)
+		log.Println(errText)
+		return "", fmt.Errorf(errText)
+	}
+
+	if exist {
+		w.WriteHeader(http.StatusOK)
+		log.Printf("Token '%s' is valid!", token)
+		return "", nil
+	} else {
+		w.WriteHeader(http.StatusUnauthorized)
+		errText := fmt.Sprintf("No suck a token: '%s'", token)
+		log.Printf(errText)
+		return "", fmt.Errorf(errText)
+	}
+}
+
 func addUser(loginParam LoginParam) error {
 	if Mysql == nil {
 		err := "Mysql obj hasn't been initilized!"
@@ -242,9 +282,11 @@ func addUser(loginParam LoginParam) error {
 		return fmt.Errorf(err)
 	}
 
+    hashedPasswd := SHA256(loginParam.Passwd)
+
 	query := fmt.Sprintf("INSERT INTO %s (email, password) VALUES (?, ?)", USER_TABLE)
 	if err := Mysql.SendQuery(query, func(db *sql.DB) error {
-		if _, err := db.Exec(query, loginParam.Email, loginParam.Passwd); err != nil {
+		if _, err := db.Exec(query, loginParam.Email, hashedPasswd); err != nil {
 			return err
 		}
 		return nil
@@ -268,8 +310,10 @@ func findUser(loginParam LoginParam) error {
 	email := ""
 	passwd := ""
 
+    hashedPasswd := SHA256(loginParam.Passwd)
+
 	if err := Mysql.SendQuery(query, func(db *sql.DB) error {
-		err := db.QueryRow(query, loginParam.Email, loginParam.Passwd).Scan(&email, &passwd)
+		err := db.QueryRow(query, loginParam.Email, hashedPasswd).Scan(&email, &passwd)
 		return err
 	}); err != nil {
 		log.Printf("No user with email '%s' password '%s'", loginParam.Email,
@@ -369,6 +413,7 @@ func TestUserExistance(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("User with email %s exist!", loginParam.Email)
 }
+
 func buyConfig(addClientParam *AddClientParam) error {
 	xuiAddClientParam := xui.AddClientRequestExternalAPI{
 		Server: addClientParam.Server,
@@ -390,46 +435,6 @@ func buyConfig(addClientParam *AddClientParam) error {
 	}
 
 	return nil
-}
-
-func AuthenticateCheck(w http.ResponseWriter, r *http.Request) (string, error) {
-	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		errTxt := "Method Not Allowed"
-		log.Printf("HTTP %d - %s", http.StatusMethodNotAllowed, errTxt)
-		// http.Error(w, errTxt, http.StatusMethodNotAllowed)
-		return "", fmt.Errorf("HTTP %d - %s", http.StatusMethodNotAllowed, errTxt)
-	}
-
-	authHeader := r.Header.Get("Authorization")
-	if !strings.HasPrefix(authHeader, "Bearer ") {
-		// No valid token...
-		w.WriteHeader(http.StatusUnauthorized)
-		errText := fmt.Sprintf("Missing session token")
-		// http.Error(w, "Missing session token", http.StatusUnauthorized)
-		log.Printf(errText)
-		return "", fmt.Errorf(errText)
-	}
-	token := strings.TrimPrefix(authHeader, "Bearer ")
-
-	exist, err := checkSessionExistance(token)
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		errText := fmt.Sprintf("Error in finding token '%s': '%v'", token, err)
-		log.Println(errText)
-		return "", fmt.Errorf(errText)
-	}
-
-	if exist {
-		w.WriteHeader(http.StatusOK)
-		log.Printf("Token '%s' is valid!", token)
-		return "", nil
-	} else {
-		w.WriteHeader(http.StatusUnauthorized)
-		errText := fmt.Sprintf("No suck a token: '%s'", token)
-		log.Printf(errText)
-		return "", fmt.Errorf(errText)
-	}
 }
 
 func checkSessionExistance(token string) (bool, error) {

@@ -398,7 +398,6 @@ func getInbound(serverConf *serverConfig, inbound *Inbound) error {
 		return err
 	}
 
-	// TODO: bug?
 	if string([]byte(xuiResp.Obj)) == "null" { // no client with the email in this server
 		errText := fmt.Sprintf("No inbound  with id '%s' in server '%s'", serverConf.id, serverConf.host)
 		log.Println(errText)
