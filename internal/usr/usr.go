@@ -150,22 +150,18 @@ func BuyConfig(w http.ResponseWriter, r *http.Request) (string, error) {
 	}
 	addClientParam.Email = email
 
-	var _client json.RawMessage
-	if _client, err = xui.GetClient(email, addClientParam.Server); err != nil {
+	var userExists bool
+	if _, userExists, err = xui.GetClient(email, addClientParam.Server); err != nil {
 		errText := fmt.Sprintf("Get client '%s' from server '%d' failed: '%v'", email, addClientParam.Server, err)
 		log.Println(errText)
 		return "", fmt.Errorf(errText)
 	}
 
-	var client xui.GetClientResponse
-	err = json.Unmarshal(_client, &client)
-	if err != nil {
-		errText := fmt.Sprintf("Failed to process client '%s' json: '%v'", email, err)
+	if userExists {
+		errText := fmt.Sprintf("User '%s' has already an account!", addClientParam.Email)
 		log.Println(errText)
 		return "", fmt.Errorf(errText)
-	}
-
-	if client.Email == "" {
+	} else {
 		if err := buyConfig(&addClientParam); err != nil {
 			errText := fmt.Sprintf("Failed to buy account for user '%s': %v", email, err)
 			log.Println(errText)
@@ -173,10 +169,6 @@ func BuyConfig(w http.ResponseWriter, r *http.Request) (string, error) {
 		}
 		log.Printf("Account for '%s' has been created!", email)
 		return "", nil
-	} else {
-		errText := fmt.Sprintf("User '%s' has already an account!", client.Email)
-		log.Println(errText)
-		return "", fmt.Errorf(errText)
 	}
 }
 

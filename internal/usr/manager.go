@@ -9,7 +9,7 @@ const (
 	USER_TABLE    = "user"
 	SESSION_TABLE = "sessions"
 	SESSION_NAME  = "onwardpath_session_token"
-	INBOUND_ID    = 1
+	INBOUND_ID    = 2
 )
 
 var (

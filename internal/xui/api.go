@@ -110,10 +110,10 @@ func AddClientInternal(addClientRequestExternalAPI AddClientRequestExternalAPI) 
 }
 
 // TODO: rm it later.
-func GetClient(email string, serverID int) (json.RawMessage, error) {
+func GetClient(email string, serverID int) (json.RawMessage, bool, error) {
 	if err := LoginWithServerID(serverID); err != nil {
 		log.Printf("Login of admin failed: '%v'", err)
-		return json.RawMessage{}, fmt.Errorf("Admin login failed")
+		return json.RawMessage{}, false, fmt.Errorf("Admin login failed")
 	}
 
 	serverIDString := strconv.Itoa(serverID) // int -> string
@@ -124,24 +124,32 @@ func GetClient(email string, serverID int) (json.RawMessage, error) {
 		}
 
 		var client GetClientResponse
-		if err := getClientWithServerConfig(email, &server, &client); err != nil {
+		var hasUser bool
+		var err error
+		if hasUser, err = getClientWithServerConfig(email, &server, &client); err != nil {
 			log.Printf("Couldn't get client with email '%s' from server '%s': '%v'",
 				email, server.host, err)
-			return json.RawMessage{}, err
+			return json.RawMessage{}, false, err
+		}
+
+		if !hasUser {
+			log.Printf("No user with email '%s' in server '%s'",
+				email, server.host)
+			return json.RawMessage{}, false, nil
 		}
 
 		clientByte, err := json.Marshal(client)
 		if err != nil {
 			log.Printf("Couldn't convert user of '%s' to byte: '%v'",
 				email, err)
-			return json.RawMessage{}, err
+			return json.RawMessage{}, true, err
 		}
 
-		return json.RawMessage(clientByte), nil
+		return json.RawMessage(clientByte), true, nil
 	}
 
 	errText := fmt.Sprintf("No server with id '%d'", serverID)
-	return json.RawMessage{}, fmt.Errorf(errText)
+	return json.RawMessage{}, false, fmt.Errorf(errText)
 }
 
 func GetUserConfigs(email string) (json.RawMessage, error) {
@@ -334,14 +342,21 @@ func getClientWithServer(email string, serverConf *serverConfig, currentConfigLi
 	}
 
 	var client GetClientResponse
-	if err := getClientWithServerConfig(email, serverConf, &client); err != nil {
+	var hasUser bool
+	if hasUser, err = getClientWithServerConfig(email, serverConf, &client); err != nil {
 		log.Printf("Couldn't get client with email '%s' from server '%s': '%v'",
 			email, serverConf.host, err)
 		return err
 	}
 
+	if !hasUser {
+		log.Printf("No user with email '%s' in server '%s'",
+			email, serverConf.host)
+		return err
+	}
+
 	var inbound Inbound
-	if err := getInbound(serverConf, &inbound); err != nil {
+	if err = getInbound(serverConf, &inbound); err != nil {
 		log.Printf("Couldn't get inbound of server '%s': '%v'", serverConf.host, err)
 		return err
 	}
@@ -363,7 +378,7 @@ func getClientWithServer(email string, serverConf *serverConfig, currentConfigLi
 	return nil
 }
 
-func getClientWithServerConfig(email string, serverConf *serverConfig, clientConfig *GetClientResponse) error {
+func getClientWithServerConfig(email string, serverConf *serverConfig, clientConfig *GetClientResponse) (bool, error) {
 	endPoint := "getClientTraffics/"
 	url := fmt.Sprintf("%s:%d/%s%s%s", serverConf.host, serverConf.port,
 		serverConf.uriPath, serverConf.baseEndpoint, endPoint)
@@ -371,7 +386,7 @@ func getClientWithServerConfig(email string, serverConf *serverConfig, clientCon
 	result, err := ipc.Get(url, email, Cookie)
 	if err != nil {
 		log.Printf("Sending Get request failed: '%v'", err)
-		return err
+		return false, err
 	}
 	log.Printf(result)
 
@@ -379,23 +394,23 @@ func getClientWithServerConfig(email string, serverConf *serverConfig, clientCon
 	err = json.Unmarshal([]byte(result), &xuiResp)
 	if err != nil {
 		log.Printf("Couldn't parse xui response: '%v'", err)
-		return err
+		return false, err
 	}
 
 	// TODO: bug?
 	if string([]byte(xuiResp.Obj)) == "null" { // no client with the email in this server
 		errText := fmt.Sprintf("No User with email '%s' in server '%s'", email, serverConf.host)
 		log.Println(errText)
-		return fmt.Errorf(errText)
+		return false, nil
 	}
 
 	err = json.Unmarshal([]byte(xuiResp.Obj), &clientConfig)
 	if err != nil {
 		log.Printf("Couldn't parse get client response: '%v'", err)
-		return err
+		return true, err
 	}
 
-	return nil
+	return true, nil
 }
 
 func getInbound(serverConf *serverConfig, inbound *Inbound) error {
