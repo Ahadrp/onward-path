@@ -109,7 +109,7 @@ func AddClientInternal(addClientRequestExternalAPI AddClientRequestExternalAPI) 
 
 	var inbound_id int
 	var err error
-	inbound_id, err = strconv.Atoi(serverConf.id)
+	inbound_id, err = strconv.Atoi(serverConf.inbound_id)
 	if err != nil {
 		errText := fmt.Sprintf("conversion failed: '%v'", err)
 		fmt.Println(errText)
@@ -117,6 +117,7 @@ func AddClientInternal(addClientRequestExternalAPI AddClientRequestExternalAPI) 
 	}
 
 	addClientRequestExternalAPI.ID = inbound_id
+	log.Printf("inbound id: '%d'", addClientRequestExternalAPI.ID)
 	addClientRequestExternalAPI.Settings.Clients[0].ID = uuid.New().String()
 
 	if err = LoginWithServerID(addClientRequestExternalAPI.Server); err != nil {
@@ -305,6 +306,8 @@ func addClient_Internal(addClientRequestExternalAPI AddClientRequestExternalAPI)
 		log.Printf("json error")
 		return err
 	}
+
+	log.Printf("User: %s", string(criaJson))
 
 	result, err := ipc.Post(url, string(criaJson), Cookie)
 	if err != nil {
