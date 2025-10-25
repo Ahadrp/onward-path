@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"io"
 	"log"
 	"net/http"
 	"onward-path/internal/ipc"
 	"strconv"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 // TODO: no need, rm later.
@@ -97,12 +98,33 @@ func AddClient(w http.ResponseWriter, r *http.Request) {
 }
 
 func AddClientInternal(addClientRequestExternalAPI AddClientRequestExternalAPI) error {
-	if err := LoginWithServerID(addClientRequestExternalAPI.Server); err != nil {
-		log.Printf("Login of admin failed: '%v'", err)
-		return fmt.Errorf("Admin login failed")
+	serverID_str := strconv.Itoa(addClientRequestExternalAPI.Server)
+
+	var serverConf serverConfig
+	var exists bool
+	if exists, serverConf = findServerConfig(serverID_str); !exists {
+		log.Printf("No server with id '%s'", serverID_str)
+		return fmt.Errorf("no such a server: '%s'", serverID_str)
 	}
 
-	if err := addClient_Internal(addClientRequestExternalAPI); err != nil {
+	var inbound_id int
+	var err error
+	inbound_id, err = strconv.Atoi(serverConf.id)
+	if err != nil {
+		errText := fmt.Sprintf("conversion failed: '%v'", err)
+		fmt.Println(errText)
+		return fmt.Errorf(errText)
+	}
+
+	addClientRequestExternalAPI.ID = inbound_id
+	addClientRequestExternalAPI.Settings.Clients[0].ID = uuid.New().String()
+
+	if err = LoginWithServerID(addClientRequestExternalAPI.Server); err != nil {
+		log.Printf("Login of admin failed: '%v'", err)
+		return fmt.Errorf("admin login failed")
+	}
+
+	if err = addClient_Internal(addClientRequestExternalAPI); err != nil {
 		return err
 	}
 
@@ -258,8 +280,6 @@ func addClient_Internal(addClientRequestExternalAPI AddClientRequestExternalAPI)
 		log.Printf("Failed to create URL: '%v'", err)
 		return err
 	}
-
-	addClientRequestExternalAPI.Settings.Clients[0].ID = uuid.New().String()
 
 	internalClientJson, err := json.Marshal(addClientRequestExternalAPI.Settings)
 	if err != nil {
@@ -454,4 +474,14 @@ func getInbound(serverConf *serverConfig, inbound *Inbound) error {
 	inbound.IP = serverConf.host
 
 	return nil
+}
+
+func findServerConfig(id string) (bool, serverConfig) {
+	for _, serverConfig := range Config.ServerConfigList {
+		if serverConfig.id == id {
+			return true, serverConfig
+		}
+	}
+
+	return false, serverConfig{}
 }

@@ -48,6 +48,7 @@ func (c *_Config) loadConfig() error {
 	for _, _serverConf := range configDTO.ServerConfigList {
 		_serverConfig := serverConfig{
 			id:           _serverConf.ID,
+			inbound_id:   _serverConf.Inbound_ID,
 			host:         _serverConf.Host,
 			port:         _serverConf.Port,
 			uriPath:      _serverConf.URIPath,
@@ -68,6 +69,7 @@ type _ConfigDTO struct {
 // internal config (private)
 type serverConfig struct {
 	id           string
+	inbound_id   string
 	host         string
 	port         int
 	uriPath      string
@@ -79,6 +81,7 @@ type serverConfig struct {
 // exported JSON version (DTO)
 type serverConfigDTO struct {
 	ID           string `json:"id"`
+	Inbound_ID   string `json:"inbound_id"`
 	Host         string `json:"host"`
 	Port         int    `json:"port"`
 	URIPath      string `json:"uri_path"`
@@ -94,6 +97,7 @@ func newServerConfig() *serverConfig {
 
 // --- getters ---
 func (c *serverConfig) ID() string           { return c.id }
+func (c *serverConfig) Inbound_ID() string   { return c.inbound_id }
 func (c *serverConfig) Host() string         { return c.host }
 func (c *serverConfig) Port() int            { return c.port }
 func (c *serverConfig) URIPath() string      { return c.uriPath }
@@ -105,6 +109,7 @@ func (c *serverConfig) AdminPass() string    { return c.adminPass }
 func (c *serverConfig) ToJSON() ([]byte, error) {
 	dto := serverConfigDTO{
 		ID:           c.id,
+		Inbound_ID:   c.inbound_id,
 		Host:         c.host,
 		Port:         c.port,
 		URIPath:      c.uriPath,
@@ -122,6 +127,7 @@ func FromJSON(data []byte) (*serverConfig, error) {
 	}
 	return &serverConfig{
 		id:           dto.ID,
+		inbound_id:   dto.Inbound_ID,
 		host:         dto.Host,
 		port:         dto.Port,
 		uriPath:      dto.URIPath,
