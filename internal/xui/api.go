@@ -441,12 +441,12 @@ func getInbound(serverConf *serverConfig, inbound *Inbound) error {
 	url := fmt.Sprintf("%s:%d/%s%s%s", serverConf.host, serverConf.port,
 		serverConf.uriPath, serverConf.baseEndpoint, endPoint)
 
-	result, err := ipc.Get(url, serverConf.id, Cookie)
+	result, err := ipc.Get(url, serverConf.inbound_id, Cookie)
 	if err != nil {
 		log.Printf("Sending Get request failed: '%v'", err)
 		return err
 	}
-	log.Printf(result)
+	log.Printf("Inbound result of server '%s': '%s'", serverConf.id, result)
 
 	var xuiResp XUIResponse
 	err = json.Unmarshal([]byte(result), &xuiResp)
@@ -456,7 +456,7 @@ func getInbound(serverConf *serverConfig, inbound *Inbound) error {
 	}
 
 	if string([]byte(xuiResp.Obj)) == "null" { // no client with the email in this server
-		errText := fmt.Sprintf("No inbound  with id '%s' in server '%s'", serverConf.id, serverConf.host)
+		errText := fmt.Sprintf("No inbound  with id '%s' in server '%s'", serverConf.inbound_id, serverConf.host)
 		log.Println(errText)
 		return fmt.Errorf(errText)
 	}
